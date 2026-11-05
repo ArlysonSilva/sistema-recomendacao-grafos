@@ -112,6 +112,8 @@ class GrafoBipartido:
     # ---------- notas e ranking ----------
     def nota_media(self, item):
         notas = self.adj[item].values()
+        if not notas:
+            return 0.0
         return sum(notas) / len(notas)
 
     def ranking(self, metodo="bayes", genero=None, m=4):
@@ -122,7 +124,10 @@ class GrafoBipartido:
                     R = media do filme, C = media global, m = peso do prior.
                     Evita que um filme com 1 nota 5 fique em 1o lugar."""
         itens = [i for i in self.itens() if genero is None or self.genero.get(i) == genero]
-        C = sum(nt for i in self.itens() for nt in self.adj[i].values()) / self.num_arestas()
+        total = self.num_arestas()
+        if not total:
+            return []
+        C = sum(nt for i in self.itens() for nt in self.adj[i].values()) / total
         def chave(i):
             v, R = self.grau(i), self.nota_media(i)
             if metodo == "media": return R

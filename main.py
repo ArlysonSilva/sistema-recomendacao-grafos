@@ -1,15 +1,21 @@
-import csv, sys
-from grafo import GrafoBipartido
-from recomendador import recomendar, recomendar_bfs, avaliar_leave_one_out
+import argparse
+import csv
+from pathlib import Path
+
+from src.caminhos import ARQUIVO_AVALIACOES, ARQUIVO_FILMES, SAIDA_EXECUCAO
+from src.grafo import GrafoBipartido
+from src.recomendador import recomendar, recomendar_bfs, avaliar_leave_one_out
 
 
-def carregar(caminho="dados/avaliacoes.csv"):
+def carregar(caminho=ARQUIVO_AVALIACOES, caminho_filmes=ARQUIVO_FILMES):
     g = GrafoBipartido()
-    with open(caminho, encoding="utf-8") as f:
+    caminho = Path(caminho)
+    caminho_filmes = Path(caminho_filmes)
+    with caminho.open(encoding="utf-8", newline="") as f:
         for r in csv.DictReader(f):
             g.add_aresta(r["usuario"], r["filme"], int(r["nota"]))
     try:
-        with open(caminho.replace("avaliacoes", "filmes"), encoding="utf-8") as f:
+        with caminho_filmes.open(encoding="utf-8", newline="") as f:
             for r in csv.DictReader(f):
                 g.genero[r["filme"]] = r["genero"]
     except FileNotFoundError:
@@ -21,7 +27,7 @@ def titulo(t):
     print("\n" + "=" * 60 + f"\n{t}\n" + "=" * 60)
 
 
-def main():
+def main(plot=False, salvar_saida=False):
     g = carregar()
     U, I = g.usuarios(), g.itens()
 
@@ -86,10 +92,20 @@ def main():
         notas = [n for i in g.itens() if g.genero[i] == gen for n in g.adj[i].values()]
         print(f"  {gen:13s}: {sum(notas)/len(notas):.2f} ({len(notas)} avaliacoes)")
 
-    if "--plot" in sys.argv:
-        from visualizacao import desenhar
+    if plot:
+        from src.visualizacao import desenhar
         desenhar(g)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="Analisa o sistema de recomendação de filmes.")
+    parser.add_argument("--plot", action="store_true", help="gera as visualizações em outputs/")
+    parser.add_argument("--salvar-saida", action="store_true", help="salva a saída textual em docs/saida_execucao.txt")
+    argumentos = parser.parse_args()
+    if argumentos.salvar_saida:
+        import contextlib
+        SAIDA_EXECUCAO.parent.mkdir(parents=True, exist_ok=True)
+        with SAIDA_EXECUCAO.open("w", encoding="utf-8") as arquivo, contextlib.redirect_stdout(arquivo):
+            main(plot=argumentos.plot)
+    else:
+        main(plot=argumentos.plot)

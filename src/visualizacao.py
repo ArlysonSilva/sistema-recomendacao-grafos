@@ -3,11 +3,13 @@
  2) layout_genero    : filmes agrupados por genero; usuarios no centroide das suas notas
  3) ranking          : barras com o ranking bayesiano, colorido por genero"""
 import math
+from pathlib import Path
 import networkx as nx
 import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.lines import Line2D
+from .caminhos import GRAFO_PNG, GRAFO_PONDERADO_PNG, GRAFO_GENEROS_PNG, RANKING_PNG
 
 CORES = {"Ficcao": "#4C9BE8", "Terror": "#D6455D", "Romance": "#E88FB4",
          "Animacao": "#F2B134", "Documentario": "#6BAF6B"}
@@ -37,6 +39,8 @@ def _legenda(ax):
 
 
 def _desenhar(g, G, pos, titulo, saida, rotulos_usuarios=False):
+    saida = Path(saida)
+    saida.parent.mkdir(parents=True, exist_ok=True)
     fig, ax = plt.subplots(figsize=(14, 10))
     for n in (1, 2, 3, 4, 5):
         arestas = [(a, b) for a, b, d in G.edges(data=True) if d["nota"] == n]
@@ -59,13 +63,13 @@ def _desenhar(g, G, pos, titulo, saida, rotulos_usuarios=False):
     print("Imagem salva em", saida)
 
 
-def layout_ponderado(g, saida="grafo_ponderado.png"):
+def layout_ponderado(g, saida=GRAFO_PONDERADO_PNG):
     G = _grafo_nx(g)
     pos = nx.spring_layout(G, weight="weight", seed=3, k=0.7, iterations=300)
     _desenhar(g, G, pos, "Layout ponderado pelas notas", saida)
 
 
-def layout_genero(g, saida="grafo_generos.png"):
+def layout_genero(g, saida=GRAFO_GENEROS_PNG):
     G = _grafo_nx(g)
     generos = sorted(set(g.genero.values()))
     centros = {}
@@ -84,11 +88,14 @@ def layout_genero(g, saida="grafo_generos.png"):
         tot = sum(pesos.values())
         x = sum(pos[i][0] * w for i, w in pesos.items()) / tot
         y = sum(pos[i][1] * w for i, w in pesos.items()) / tot
-        pos[u] = (x + 0.12 * math.cos(hash(u) % 7), y + 0.12 * math.sin(hash(u) % 7))
+        deslocamento = sum((indice + 1) * ord(caractere) for indice, caractere in enumerate(u)) % 7
+        pos[u] = (x + 0.12 * math.cos(deslocamento), y + 0.12 * math.sin(deslocamento))
     _desenhar(g, G, pos, "Layout por genero (usuarios no centroide das suas notas)", saida, True)
 
 
-def ranking(g, saida="ranking.png", top=15):
+def ranking(g, saida=RANKING_PNG, top=15):
+    saida = Path(saida)
+    saida.parent.mkdir(parents=True, exist_ok=True)
     r = g.ranking("bayes")[:top][::-1]
     fig, ax = plt.subplots(figsize=(9, 7))
     ax.barh([i for i, _ in r], [s for _, s in r], color=[CORES[g.genero[i]] for i, _ in r], edgecolor="black")
@@ -102,4 +109,7 @@ def ranking(g, saida="ranking.png", top=15):
 
 
 def desenhar(g):
-    layout_ponderado(g); layout_genero(g); ranking(g)
+    layout_ponderado(g)
+    layout_ponderado(g, GRAFO_PNG)
+    layout_genero(g)
+    ranking(g)

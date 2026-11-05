@@ -97,6 +97,3 @@ Nota media por genero:
   Ficcao       : 4.58 (45 avaliacoes)
   Romance      : 4.46 (37 avaliacoes)
   Terror       : 4.09 (53 avaliacoes)
-Imagem salva em grafo_ponderado.png
-Imagem salva em grafo_generos.png
-Imagem salva em ranking.png

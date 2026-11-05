@@ -1,9 +1,14 @@
 """Gera um dataset sintetico pequeno (seed fixa) para o projeto.
 Nao ha acesso a internet no ambiente, entao em vez do MovieLens usamos
 dados simulados no mesmo formato: usuario,filme,nota."""
-import csv, random
+import argparse
+import csv
+import random
+from pathlib import Path
 
-random.seed(42)
+from src.caminhos import ARQUIVO_AVALIACOES, ARQUIVO_FILMES
+
+SEED = 42
 
 FILMES = {
     "Ficcao": ["Matrix", "Interestelar", "Blade Runner", "A Chegada", "Ex Machina", "Duna", "Inception"],
@@ -14,30 +19,41 @@ FILMES = {
 # componente isolada: ninguem do grupo principal viu estes filmes
 DOCS = ["Democracia em Vertigem", "Cosmos"]
 
-linhas = []
-grupos = list(FILMES)
-uid = 1
-for g in grupos:                      # 7 usuarios por perfil principal
-    for _ in range(7):
-        u = f"user{uid:02d}"; uid += 1
-        outros = [x for x in grupos if x != g]
-        for f in random.sample(FILMES[g], random.randint(4, 6)):
-            linhas.append((u, f, random.choice([4, 5, 5])))
-        if random.random() < 0.7:     # gosto "secundario" cria pontes entre grupos
-            o = random.choice(outros)
-            for f in random.sample(FILMES[o], 2):
-                linhas.append((u, f, random.choice([2, 3, 4, 5])))
-# cold start: usuario com 1 avaliacao
-linhas.append(("user29", "Matrix", 5))
-# componente isolada
-linhas += [("user30", DOCS[0], 5), ("user31", DOCS[0], 4), ("user31", DOCS[1], 5)]
+def gerar_dados(arquivo_avaliacoes=ARQUIVO_AVALIACOES, arquivo_filmes=ARQUIVO_FILMES, sobrescrever=False):
+    arquivo_avaliacoes, arquivo_filmes = Path(arquivo_avaliacoes), Path(arquivo_filmes)
+    existentes = [p for p in (arquivo_avaliacoes, arquivo_filmes) if p.exists()]
+    if existentes and not sobrescrever:
+        raise FileExistsError("Dados existentes preservados. Use --sobrescrever para substituí-los: " + ", ".join(map(str, existentes)))
+    rng = random.Random(SEED)
+    linhas = []
+    grupos = list(FILMES)
+    uid = 1
+    for genero in grupos:
+        for _ in range(7):
+            usuario = f"user{uid:02d}"; uid += 1
+            outros = [x for x in grupos if x != genero]
+            for filme in rng.sample(FILMES[genero], rng.randint(4, 6)):
+                linhas.append((usuario, filme, rng.choice([4, 5, 5])))
+            if rng.random() < 0.7:
+                outro = rng.choice(outros)
+                for filme in rng.sample(FILMES[outro], 2):
+                    linhas.append((usuario, filme, rng.choice([2, 3, 4, 5])))
+    linhas.append(("user29", "Matrix", 5))
+    linhas += [("user30", DOCS[0], 5), ("user31", DOCS[0], 4), ("user31", DOCS[1], 5)]
 
-with open("dados/avaliacoes.csv", "w", newline="", encoding="utf-8") as f:
-    w = csv.writer(f); w.writerow(["usuario", "filme", "nota"]); w.writerows(linhas)
-print(len(linhas), "avaliacoes geradas")
+    arquivo_avaliacoes.parent.mkdir(parents=True, exist_ok=True)
+    arquivo_filmes.parent.mkdir(parents=True, exist_ok=True)
+    with arquivo_avaliacoes.open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f); w.writerow(["usuario", "filme", "nota"]); w.writerows(linhas)
+    with arquivo_filmes.open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f); w.writerow(["filme", "genero"])
+        for genero, filmes in FILMES.items():
+            for filme in filmes: w.writerow([filme, genero])
+        for filme in DOCS: w.writerow([filme, "Documentario"])
+    print(len(linhas), "avaliacoes geradas")
 
-with open("dados/filmes.csv", "w", newline="", encoding="utf-8") as f:
-    w = csv.writer(f); w.writerow(["filme", "genero"])
-    for g, fs in FILMES.items():
-        for x in fs: w.writerow([x, g])
-    for x in DOCS: w.writerow([x, "Documentario"])
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Gera os CSVs sintéticos do projeto.")
+    parser.add_argument("--sobrescrever", action="store_true", help="substitui dados CSV existentes")
+    gerar_dados(sobrescrever=parser.parse_args().sobrescrever)
