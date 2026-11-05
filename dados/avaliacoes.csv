@@ -1,0 +1,186 @@
+usuario,filme,nota
+user01,Matrix,5
+user01,Inception,4
+user01,Blade Runner,5
+user01,Interestelar,5
+user01,Duna,5
+user01,Ex Machina,4
+user01,O Exorcista,3
+user01,O Iluminado,3
+user02,Ex Machina,4
+user02,Matrix,5
+user02,Inception,5
+user02,Interestelar,5
+user02,Blade Runner,4
+user02,A Chegada,4
+user02,La La Land,3
+user02,Diario de uma Paixao,4
+user03,Matrix,5
+user03,A Chegada,5
+user03,Inception,5
+user03,Blade Runner,4
+user04,Matrix,5
+user04,A Chegada,4
+user04,Inception,5
+user04,Blade Runner,4
+user04,Duna,4
+user04,Interestelar,5
+user04,Titanic,2
+user04,Diario de uma Paixao,5
+user05,A Chegada,5
+user05,Duna,4
+user05,Blade Runner,5
+user05,Interestelar,5
+user05,Inception,5
+user06,Matrix,5
+user06,Ex Machina,5
+user06,Interestelar,5
+user06,Duna,5
+user06,Inception,5
+user06,A Chegada,4
+user06,Hereditario,4
+user06,O Exorcista,5
+user07,Matrix,5
+user07,Interestelar,5
+user07,Ex Machina,5
+user07,Blade Runner,5
+user07,Inception,5
+user07,Hereditario,4
+user07,It: A Coisa,5
+user08,Um Lugar Silencioso,4
+user08,Corra!,4
+user08,Hereditario,4
+user08,O Exorcista,5
+user08,O Iluminado,4
+user08,It: A Coisa,5
+user08,A Chegada,5
+user08,Inception,4
+user09,O Exorcista,5
+user09,O Iluminado,5
+user09,Corra!,4
+user09,Um Lugar Silencioso,5
+user09,Hereditario,4
+user09,It: A Coisa,5
+user10,It: A Coisa,5
+user10,Hereditario,5
+user10,O Exorcista,5
+user10,Corra!,4
+user10,O Iluminado,4
+user10,Ex Machina,2
+user10,Inception,4
+user11,O Exorcista,4
+user11,O Iluminado,4
+user11,Corra!,5
+user11,Hereditario,4
+user11,It: A Coisa,4
+user12,It: A Coisa,5
+user12,Hereditario,5
+user12,O Iluminado,4
+user12,Corra!,5
+user12,Up,3
+user12,Procurando Nemo,4
+user13,O Iluminado,4
+user13,Corra!,4
+user13,Um Lugar Silencioso,4
+user13,It: A Coisa,4
+user13,Hereditario,5
+user13,Procurando Nemo,3
+user13,Divertida Mente,2
+user14,O Iluminado,4
+user14,O Exorcista,5
+user14,Hereditario,4
+user14,It: A Coisa,5
+user14,Up,3
+user14,Procurando Nemo,5
+user15,Orgulho e Preconceito,4
+user15,Antes do Amanhecer,5
+user15,Diario de uma Paixao,5
+user15,Titanic,5
+user15,O Iluminado,2
+user15,O Exorcista,2
+user16,Antes do Amanhecer,4
+user16,La La Land,5
+user16,Titanic,5
+user16,Orgulho e Preconceito,4
+user16,Questao de Tempo,5
+user16,Hereditario,5
+user16,O Exorcista,2
+user17,Antes do Amanhecer,4
+user17,Questao de Tempo,4
+user17,Titanic,5
+user17,Orgulho e Preconceito,5
+user17,O Exorcista,5
+user17,Hereditario,2
+user18,La La Land,4
+user18,Orgulho e Preconceito,4
+user18,Antes do Amanhecer,5
+user18,Diario de uma Paixao,4
+user18,Questao de Tempo,4
+user18,Toy Story,2
+user18,Viagem de Chihiro,2
+user19,Orgulho e Preconceito,4
+user19,Questao de Tempo,5
+user19,Diario de uma Paixao,4
+user19,Titanic,5
+user19,La La Land,4
+user19,Antes do Amanhecer,5
+user19,Procurando Nemo,2
+user19,Divertida Mente,2
+user20,Antes do Amanhecer,5
+user20,Questao de Tempo,5
+user20,La La Land,5
+user20,Diario de uma Paixao,4
+user20,Titanic,5
+user20,Shrek,5
+user20,Viagem de Chihiro,4
+user21,Titanic,5
+user21,Orgulho e Preconceito,4
+user21,Antes do Amanhecer,5
+user21,Questao de Tempo,5
+user21,O Exorcista,4
+user21,Hereditario,4
+user22,Up,5
+user22,Divertida Mente,5
+user22,Viagem de Chihiro,4
+user22,Shrek,5
+user23,Shrek,4
+user23,Toy Story,5
+user23,Procurando Nemo,5
+user23,Up,4
+user23,Divertida Mente,5
+user23,Duna,3
+user23,Blade Runner,4
+user24,Up,4
+user24,Viagem de Chihiro,4
+user24,Toy Story,5
+user24,Shrek,4
+user24,Procurando Nemo,5
+user24,Divertida Mente,5
+user24,It: A Coisa,2
+user24,Um Lugar Silencioso,2
+user25,Shrek,5
+user25,Procurando Nemo,5
+user25,Toy Story,4
+user25,Divertida Mente,5
+user25,Corra!,4
+user25,O Exorcista,3
+user26,Procurando Nemo,4
+user26,Toy Story,4
+user26,Viagem de Chihiro,4
+user26,Up,5
+user26,Shrek,4
+user26,Divertida Mente,4
+user27,Up,5
+user27,Procurando Nemo,4
+user27,Viagem de Chihiro,5
+user27,Toy Story,4
+user27,Shrek,4
+user28,Viagem de Chihiro,5
+user28,Shrek,4
+user28,Procurando Nemo,5
+user28,Toy Story,5
+user28,Divertida Mente,5
+user29,Matrix,5
+user30,Democracia em Vertigem,5
+user31,Democracia em Vertigem,4
+user31,Cosmos,5
