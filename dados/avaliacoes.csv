@@ -1,186 +1,561 @@
-usuario,filme,nota
-user01,Matrix,5
-user01,Inception,4
-user01,Blade Runner,5
-user01,Interestelar,5
-user01,Duna,5
-user01,Ex Machina,4
-user01,O Exorcista,3
-user01,O Iluminado,3
-user02,Ex Machina,4
-user02,Matrix,5
-user02,Inception,5
-user02,Interestelar,5
-user02,Blade Runner,4
-user02,A Chegada,4
-user02,La La Land,3
-user02,Diario de uma Paixao,4
-user03,Matrix,5
-user03,A Chegada,5
-user03,Inception,5
-user03,Blade Runner,4
-user04,Matrix,5
-user04,A Chegada,4
-user04,Inception,5
-user04,Blade Runner,4
-user04,Duna,4
-user04,Interestelar,5
-user04,Titanic,2
-user04,Diario de uma Paixao,5
-user05,A Chegada,5
-user05,Duna,4
-user05,Blade Runner,5
-user05,Interestelar,5
-user05,Inception,5
-user06,Matrix,5
-user06,Ex Machina,5
-user06,Interestelar,5
-user06,Duna,5
-user06,Inception,5
-user06,A Chegada,4
-user06,Hereditario,4
-user06,O Exorcista,5
-user07,Matrix,5
-user07,Interestelar,5
-user07,Ex Machina,5
-user07,Blade Runner,5
-user07,Inception,5
-user07,Hereditario,4
-user07,It: A Coisa,5
-user08,Um Lugar Silencioso,4
-user08,Corra!,4
-user08,Hereditario,4
-user08,O Exorcista,5
-user08,O Iluminado,4
-user08,It: A Coisa,5
-user08,A Chegada,5
-user08,Inception,4
-user09,O Exorcista,5
-user09,O Iluminado,5
-user09,Corra!,4
-user09,Um Lugar Silencioso,5
-user09,Hereditario,4
-user09,It: A Coisa,5
-user10,It: A Coisa,5
-user10,Hereditario,5
-user10,O Exorcista,5
-user10,Corra!,4
-user10,O Iluminado,4
-user10,Ex Machina,2
-user10,Inception,4
-user11,O Exorcista,4
-user11,O Iluminado,4
-user11,Corra!,5
-user11,Hereditario,4
-user11,It: A Coisa,4
-user12,It: A Coisa,5
-user12,Hereditario,5
-user12,O Iluminado,4
-user12,Corra!,5
-user12,Up,3
-user12,Procurando Nemo,4
-user13,O Iluminado,4
-user13,Corra!,4
-user13,Um Lugar Silencioso,4
-user13,It: A Coisa,4
-user13,Hereditario,5
-user13,Procurando Nemo,3
-user13,Divertida Mente,2
-user14,O Iluminado,4
-user14,O Exorcista,5
-user14,Hereditario,4
-user14,It: A Coisa,5
-user14,Up,3
-user14,Procurando Nemo,5
-user15,Orgulho e Preconceito,4
-user15,Antes do Amanhecer,5
-user15,Diario de uma Paixao,5
-user15,Titanic,5
-user15,O Iluminado,2
-user15,O Exorcista,2
-user16,Antes do Amanhecer,4
-user16,La La Land,5
-user16,Titanic,5
-user16,Orgulho e Preconceito,4
-user16,Questao de Tempo,5
-user16,Hereditario,5
-user16,O Exorcista,2
-user17,Antes do Amanhecer,4
-user17,Questao de Tempo,4
-user17,Titanic,5
-user17,Orgulho e Preconceito,5
-user17,O Exorcista,5
-user17,Hereditario,2
-user18,La La Land,4
-user18,Orgulho e Preconceito,4
-user18,Antes do Amanhecer,5
-user18,Diario de uma Paixao,4
-user18,Questao de Tempo,4
-user18,Toy Story,2
-user18,Viagem de Chihiro,2
-user19,Orgulho e Preconceito,4
-user19,Questao de Tempo,5
-user19,Diario de uma Paixao,4
-user19,Titanic,5
-user19,La La Land,4
-user19,Antes do Amanhecer,5
-user19,Procurando Nemo,2
-user19,Divertida Mente,2
-user20,Antes do Amanhecer,5
-user20,Questao de Tempo,5
-user20,La La Land,5
-user20,Diario de uma Paixao,4
-user20,Titanic,5
-user20,Shrek,5
-user20,Viagem de Chihiro,4
-user21,Titanic,5
-user21,Orgulho e Preconceito,4
-user21,Antes do Amanhecer,5
-user21,Questao de Tempo,5
-user21,O Exorcista,4
-user21,Hereditario,4
-user22,Up,5
-user22,Divertida Mente,5
-user22,Viagem de Chihiro,4
-user22,Shrek,5
-user23,Shrek,4
-user23,Toy Story,5
-user23,Procurando Nemo,5
-user23,Up,4
-user23,Divertida Mente,5
-user23,Duna,3
-user23,Blade Runner,4
-user24,Up,4
-user24,Viagem de Chihiro,4
-user24,Toy Story,5
-user24,Shrek,4
-user24,Procurando Nemo,5
-user24,Divertida Mente,5
-user24,It: A Coisa,2
-user24,Um Lugar Silencioso,2
-user25,Shrek,5
-user25,Procurando Nemo,5
-user25,Toy Story,4
-user25,Divertida Mente,5
-user25,Corra!,4
-user25,O Exorcista,3
-user26,Procurando Nemo,4
-user26,Toy Story,4
-user26,Viagem de Chihiro,4
-user26,Up,5
-user26,Shrek,4
-user26,Divertida Mente,4
-user27,Up,5
-user27,Procurando Nemo,4
-user27,Viagem de Chihiro,5
-user27,Toy Story,4
-user27,Shrek,4
-user28,Viagem de Chihiro,5
-user28,Shrek,4
-user28,Procurando Nemo,5
-user28,Toy Story,5
-user28,Divertida Mente,5
-user29,Matrix,5
-user30,Democracia em Vertigem,5
-user31,Democracia em Vertigem,4
-user31,Cosmos,5
+usuario_id,filme_id,nota
+u001,f005,5
+u001,f013,4
+u001,f015,5
+u001,f016,4
+u001,f018,4
+u001,f019,5
+u001,f020,3
+u001,f021,4
+u001,f022,3
+u001,f024,3
+u001,f025,5
+u001,f028,3
+u001,f031,4
+u001,f056,4
+u002,f001,5
+u002,f005,4
+u002,f013,5
+u002,f014,5
+u002,f015,5
+u002,f018,3
+u002,f019,4
+u002,f020,5
+u002,f021,3
+u002,f023,4
+u002,f024,5
+u002,f025,5
+u002,f040,4
+u002,f052,2
+u003,f001,5
+u003,f008,5
+u003,f013,4
+u003,f014,4
+u003,f016,5
+u003,f017,4
+u003,f018,3
+u003,f019,3
+u003,f022,3
+u003,f023,3
+u003,f024,4
+u003,f039,5
+u003,f047,5
+u003,f056,4
+u004,f007,4
+u004,f012,4
+u004,f014,5
+u004,f015,5
+u004,f016,3
+u004,f018,3
+u004,f019,5
+u004,f020,5
+u004,f021,4
+u004,f022,4
+u004,f024,5
+u004,f025,4
+u004,f036,2
+u004,f043,4
+u005,f003,5
+u005,f005,4
+u005,f013,4
+u005,f015,4
+u005,f016,3
+u005,f017,5
+u005,f019,3
+u005,f020,3
+u005,f021,4
+u005,f023,5
+u005,f024,5
+u005,f046,4
+u005,f055,3
+u005,f056,3
+u006,f001,5
+u006,f004,4
+u006,f005,3
+u006,f013,4
+u006,f014,5
+u006,f015,4
+u006,f018,3
+u006,f019,5
+u006,f020,5
+u006,f022,4
+u006,f023,5
+u006,f024,4
+u006,f035,2
+u006,f055,4
+u007,f004,3
+u007,f009,5
+u007,f013,5
+u007,f015,3
+u007,f016,4
+u007,f017,3
+u007,f018,5
+u007,f019,5
+u007,f021,3
+u007,f022,3
+u007,f023,5
+u007,f025,4
+u007,f026,5
+u007,f041,3
+u008,f003,4
+u008,f005,5
+u008,f011,5
+u008,f013,5
+u008,f014,5
+u008,f016,5
+u008,f018,5
+u008,f019,4
+u008,f020,5
+u008,f021,5
+u008,f022,4
+u008,f023,4
+u008,f044,2
+u008,f047,2
+u009,f001,4
+u009,f003,5
+u009,f004,4
+u009,f005,5
+u009,f007,4
+u009,f008,3
+u009,f017,2
+u009,f025,4
+u009,f026,4
+u009,f027,5
+u009,f029,4
+u009,f030,2
+u009,f034,2
+u009,f047,5
+u010,f001,5
+u010,f002,5
+u010,f003,4
+u010,f005,5
+u010,f007,4
+u010,f008,4
+u010,f025,4
+u010,f026,5
+u010,f027,5
+u010,f034,5
+u010,f037,3
+u010,f041,4
+u010,f044,2
+u010,f055,4
+u011,f001,4
+u011,f002,5
+u011,f003,5
+u011,f005,5
+u011,f007,5
+u011,f008,5
+u011,f010,5
+u011,f017,2
+u011,f026,5
+u011,f027,5
+u011,f028,5
+u011,f035,2
+u011,f043,3
+u011,f045,2
+u012,f001,4
+u012,f002,4
+u012,f004,4
+u012,f005,5
+u012,f006,4
+u012,f007,4
+u012,f025,4
+u012,f027,5
+u012,f028,5
+u012,f031,3
+u012,f045,4
+u012,f048,4
+u012,f053,3
+u012,f055,4
+u013,f001,4
+u013,f002,5
+u013,f003,5
+u013,f005,5
+u013,f006,5
+u013,f007,5
+u013,f020,3
+u013,f025,5
+u013,f027,4
+u013,f028,4
+u013,f040,5
+u013,f041,4
+u013,f048,2
+u013,f051,3
+u014,f001,4
+u014,f002,4
+u014,f003,3
+u014,f005,3
+u014,f007,5
+u014,f008,5
+u014,f010,3
+u014,f020,4
+u014,f025,3
+u014,f026,5
+u014,f028,5
+u014,f031,5
+u014,f041,3
+u014,f047,4
+u015,f002,4
+u015,f003,3
+u015,f004,3
+u015,f005,3
+u015,f006,4
+u015,f008,4
+u015,f015,4
+u015,f022,5
+u015,f025,4
+u015,f026,4
+u015,f027,5
+u015,f045,5
+u015,f050,3
+u015,f053,4
+u016,f002,5
+u016,f003,4
+u016,f004,5
+u016,f005,5
+u016,f007,3
+u016,f008,5
+u016,f016,4
+u016,f025,4
+u016,f026,4
+u016,f027,5
+u016,f030,3
+u016,f036,5
+u016,f037,3
+u016,f047,4
+u017,f007,4
+u017,f011,3
+u017,f022,5
+u017,f025,5
+u017,f031,4
+u017,f038,4
+u017,f039,5
+u017,f040,4
+u017,f042,5
+u017,f043,5
+u017,f044,3
+u017,f045,3
+u017,f047,4
+u017,f048,5
+u018,f005,4
+u018,f009,4
+u018,f024,4
+u018,f035,3
+u018,f036,5
+u018,f037,3
+u018,f038,5
+u018,f039,5
+u018,f041,5
+u018,f042,4
+u018,f044,5
+u018,f045,5
+u018,f047,5
+u018,f048,5
+u019,f001,4
+u019,f008,5
+u019,f009,3
+u019,f014,4
+u019,f022,4
+u019,f037,4
+u019,f038,4
+u019,f040,4
+u019,f041,3
+u019,f042,5
+u019,f043,4
+u019,f046,4
+u019,f047,4
+u019,f048,3
+u020,f023,5
+u020,f025,5
+u020,f029,5
+u020,f030,2
+u020,f031,4
+u020,f037,5
+u020,f038,5
+u020,f039,4
+u020,f041,5
+u020,f042,5
+u020,f043,5
+u020,f046,5
+u020,f047,5
+u020,f048,5
+u021,f005,4
+u021,f030,3
+u021,f034,4
+u021,f036,2
+u021,f037,5
+u021,f038,4
+u021,f040,3
+u021,f041,5
+u021,f042,4
+u021,f043,3
+u021,f046,5
+u021,f047,5
+u021,f048,4
+u021,f050,2
+u022,f001,4
+u022,f009,4
+u022,f018,3
+u022,f019,3
+u022,f030,3
+u022,f037,5
+u022,f039,4
+u022,f040,3
+u022,f041,5
+u022,f042,3
+u022,f044,5
+u022,f045,4
+u022,f046,4
+u022,f047,3
+u023,f001,4
+u023,f002,5
+u023,f025,4
+u023,f032,3
+u023,f037,5
+u023,f039,5
+u023,f040,3
+u023,f041,3
+u023,f042,5
+u023,f044,3
+u023,f045,4
+u023,f046,5
+u023,f047,4
+u023,f051,4
+u024,f005,5
+u024,f007,5
+u024,f014,2
+u024,f036,5
+u024,f037,4
+u024,f038,5
+u024,f040,4
+u024,f041,5
+u024,f042,4
+u024,f044,4
+u024,f046,4
+u024,f047,5
+u024,f048,5
+u024,f052,2
+u025,f006,5
+u025,f009,5
+u025,f010,4
+u025,f011,4
+u025,f019,4
+u025,f025,5
+u025,f029,5
+u025,f031,5
+u025,f032,5
+u025,f033,5
+u025,f034,5
+u025,f036,3
+u025,f037,5
+u025,f052,3
+u026,f002,4
+u026,f005,5
+u026,f009,5
+u026,f010,5
+u026,f011,5
+u026,f013,2
+u026,f029,4
+u026,f030,4
+u026,f031,3
+u026,f033,3
+u026,f034,5
+u026,f036,4
+u026,f037,3
+u026,f056,5
+u027,f001,5
+u027,f008,5
+u027,f009,3
+u027,f011,4
+u027,f012,3
+u027,f016,3
+u027,f029,4
+u027,f030,5
+u027,f031,5
+u027,f034,4
+u027,f035,4
+u027,f036,5
+u027,f042,5
+u027,f060,3
+u028,f006,4
+u028,f009,5
+u028,f010,4
+u028,f012,5
+u028,f025,4
+u028,f026,5
+u028,f029,4
+u028,f030,4
+u028,f031,5
+u028,f034,4
+u028,f035,3
+u028,f036,5
+u028,f037,2
+u028,f049,5
+u029,f005,4
+u029,f009,4
+u029,f010,4
+u029,f012,4
+u029,f021,3
+u029,f029,4
+u029,f030,5
+u029,f031,5
+u029,f033,4
+u029,f034,3
+u029,f035,5
+u029,f041,3
+u029,f055,5
+u029,f056,2
+u030,f001,5
+u030,f008,5
+u030,f009,4
+u030,f010,5
+u030,f012,3
+u030,f017,2
+u030,f029,4
+u030,f030,3
+u030,f031,4
+u030,f033,4
+u030,f034,3
+u030,f036,5
+u030,f040,5
+u030,f060,3
+u031,f004,2
+u031,f009,3
+u031,f010,4
+u031,f011,4
+u031,f015,3
+u031,f025,4
+u031,f030,5
+u031,f031,4
+u031,f032,4
+u031,f033,4
+u031,f034,3
+u031,f036,3
+u031,f041,3
+u031,f052,5
+u032,f005,4
+u032,f010,3
+u032,f011,5
+u032,f012,3
+u032,f026,4
+u032,f029,4
+u032,f031,5
+u032,f032,4
+u032,f033,3
+u032,f034,3
+u032,f036,3
+u032,f045,2
+u032,f049,3
+u032,f055,5
+u033,f008,4
+u033,f013,3
+u033,f015,4
+u033,f025,5
+u033,f032,4
+u033,f049,4
+u033,f050,4
+u033,f052,4
+u033,f053,4
+u033,f054,5
+u033,f055,5
+u033,f057,4
+u033,f058,5
+u033,f059,4
+u034,f005,5
+u034,f022,5
+u034,f024,3
+u034,f036,4
+u034,f039,5
+u034,f050,5
+u034,f051,5
+u034,f052,5
+u034,f053,4
+u034,f054,4
+u034,f055,5
+u034,f057,4
+u034,f058,4
+u034,f060,4
+u035,f001,5
+u035,f017,5
+u035,f020,3
+u035,f035,5
+u035,f047,5
+u035,f049,5
+u035,f050,3
+u035,f051,4
+u035,f053,5
+u035,f055,4
+u035,f056,5
+u035,f058,5
+u035,f059,3
+u035,f060,4
+u036,f012,5
+u036,f014,3
+u036,f015,2
+u036,f025,4
+u036,f032,4
+u036,f050,4
+u036,f051,3
+u036,f052,4
+u036,f054,5
+u036,f055,3
+u036,f056,5
+u036,f058,5
+u036,f059,4
+u036,f060,4
+u037,f005,5
+u037,f022,4
+u037,f036,4
+u037,f041,3
+u037,f044,2
+u037,f049,4
+u037,f051,4
+u037,f052,5
+u037,f054,5
+u037,f055,4
+u037,f056,3
+u037,f058,4
+u037,f059,4
+u037,f060,4
+u038,f001,5
+u038,f004,3
+u038,f017,4
+u038,f025,4
+u038,f031,2
+u038,f049,4
+u038,f050,5
+u038,f051,4
+u038,f053,4
+u038,f054,5
+u038,f056,3
+u038,f057,5
+u038,f058,5
+u038,f060,4
+u039,f015,4
+u039,f025,5
+u039,f027,2
+u039,f039,3
+u039,f046,5
+u039,f049,4
+u039,f050,5
+u039,f052,4
+u039,f054,5
+u039,f055,5
+u039,f056,4
+u039,f057,3
+u039,f058,5
+u039,f060,4
+u040,f005,4
+u040,f022,5
+u040,f028,5
+u040,f039,4
+u040,f045,4
+u040,f050,5
+u040,f051,5
+u040,f052,5
+u040,f054,4
+u040,f055,5
+u040,f056,3
+u040,f058,3
+u040,f059,4
+u040,f060,4

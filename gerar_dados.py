@@ -1,59 +1,101 @@
-"""Gera um dataset sintetico pequeno (seed fixa) para o projeto.
-Nao ha acesso a internet no ambiente, entao em vez do MovieLens usamos
-dados simulados no mesmo formato: usuario,filme,nota."""
+"""Atualiza títulos e gêneros sem mexer nas avaliações."""
 import argparse
 import csv
-import random
 from pathlib import Path
 
-from src.caminhos import ARQUIVO_AVALIACOES, ARQUIVO_FILMES
 
-SEED = 42
+ARQUIVO_FILMES = Path(__file__).resolve().parent / "dados" / "filmes.csv"
 
-FILMES = {
-    "Ficcao": ["Matrix", "Interestelar", "Blade Runner", "A Chegada", "Ex Machina", "Duna", "Inception"],
-    "Terror": ["O Exorcista", "Hereditario", "Corra!", "Um Lugar Silencioso", "It: A Coisa", "O Iluminado"],
-    "Romance": ["Titanic", "Diario de uma Paixao", "La La Land", "Orgulho e Preconceito", "Questao de Tempo", "Antes do Amanhecer"],
-    "Animacao": ["Toy Story", "Procurando Nemo", "Viagem de Chihiro", "Up", "Divertida Mente", "Shrek"],
-}
-# componente isolada: ninguem do grupo principal viu estes filmes
-DOCS = ["Democracia em Vertigem", "Cosmos"]
+# A ordem acompanha os IDs f001 a f060 já usados em avaliacoes.csv.
+CATALOGO = [
+    ("Mad Max: Estrada da Fúria", "Ação"),
+    ("John Wick", "Ação"),
+    ("Duro de Matar", "Ação"),
+    ("Gladiador", "Ação"),
+    ("Indiana Jones e os Caçadores da Arca Perdida", "Aventura"),
+    ("Jurassic Park", "Aventura"),
+    ("Piratas do Caribe: A Maldição do Pérola Negra", "Aventura"),
+    ("Jumanji", "Aventura"),
+    ("Toy Story", "Animação"),
+    ("Procurando Nemo", "Animação"),
+    ("Shrek", "Animação"),
+    ("A Viagem de Chihiro", "Animação"),
+    ("As Branquelas", "Comédia"),
+    ("O Auto da Compadecida", "Comédia"),
+    ("Se Beber, Não Case!", "Comédia"),
+    ("Feitiço do Tempo", "Comédia"),
+    ("Um Sonho de Liberdade", "Drama"),
+    ("À Espera de um Milagre", "Drama"),
+    ("Forrest Gump", "Drama"),
+    ("O Pianista", "Drama"),
+    ("Diário de uma Paixão", "Romance"),
+    ("Orgulho e Preconceito", "Romance"),
+    ("Titanic", "Romance"),
+    ("Como Eu Era Antes de Você", "Romance"),
+    ("Interestelar", "Ficção científica"),
+    ("Matrix", "Ficção científica"),
+    ("Blade Runner 2049", "Ficção científica"),
+    ("De Volta para o Futuro", "Ficção científica"),
+    ("Harry Potter e a Pedra Filosofal", "Fantasia"),
+    ("O Senhor dos Anéis: A Sociedade do Anel", "Fantasia"),
+    ("O Hobbit: Uma Jornada Inesperada", "Fantasia"),
+    ("A História Sem Fim", "Fantasia"),
+    ("O Exorcista", "Terror"),
+    ("Invocação do Mal", "Terror"),
+    ("Hereditário", "Terror"),
+    ("A Bruxa", "Terror"),
+    ("Seven", "Suspense"),
+    ("Ilha do Medo", "Suspense"),
+    ("Garota Exemplar", "Suspense"),
+    ("Os Suspeitos", "Suspense"),
+    ("Entre Facas e Segredos", "Mistério"),
+    ("Assassinato no Expresso do Oriente", "Mistério"),
+    ("Zodíaco", "Mistério"),
+    ("A Garota no Trem", "Mistério"),
+    ("O Poderoso Chefão", "Crime"),
+    ("Os Bons Companheiros", "Crime"),
+    ("Scarface", "Crime"),
+    ("Os Infiltrados", "Crime"),
+    ("Free Solo", "Documentário"),
+    ("O Dilema das Redes", "Documentário"),
+    ("Amy", "Documentário"),
+    ("Senna", "Documentário"),
+    ("Cantando na Chuva", "Musical"),
+    ("Chicago", "Musical"),
+    ("Os Miseráveis", "Musical"),
+    ("O Rei do Show", "Musical"),
+    ("O Resgate do Soldado Ryan", "Guerra"),
+    ("1917", "Guerra"),
+    ("Até o Último Homem", "Guerra"),
+    ("Apocalypse Now", "Guerra"),
+]
 
-def gerar_dados(arquivo_avaliacoes=ARQUIVO_AVALIACOES, arquivo_filmes=ARQUIVO_FILMES, sobrescrever=False):
-    arquivo_avaliacoes, arquivo_filmes = Path(arquivo_avaliacoes), Path(arquivo_filmes)
-    existentes = [p for p in (arquivo_avaliacoes, arquivo_filmes) if p.exists()]
-    if existentes and not sobrescrever:
-        raise FileExistsError("Dados existentes preservados. Use --sobrescrever para substituí-los: " + ", ".join(map(str, existentes)))
-    rng = random.Random(SEED)
-    linhas = []
-    grupos = list(FILMES)
-    uid = 1
-    for genero in grupos:
-        for _ in range(7):
-            usuario = f"user{uid:02d}"; uid += 1
-            outros = [x for x in grupos if x != genero]
-            for filme in rng.sample(FILMES[genero], rng.randint(4, 6)):
-                linhas.append((usuario, filme, rng.choice([4, 5, 5])))
-            if rng.random() < 0.7:
-                outro = rng.choice(outros)
-                for filme in rng.sample(FILMES[outro], 2):
-                    linhas.append((usuario, filme, rng.choice([2, 3, 4, 5])))
-    linhas.append(("user29", "Matrix", 5))
-    linhas += [("user30", DOCS[0], 5), ("user31", DOCS[0], 4), ("user31", DOCS[1], 5)]
 
-    arquivo_avaliacoes.parent.mkdir(parents=True, exist_ok=True)
-    arquivo_filmes.parent.mkdir(parents=True, exist_ok=True)
-    with arquivo_avaliacoes.open("w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f); w.writerow(["usuario", "filme", "nota"]); w.writerows(linhas)
-    with arquivo_filmes.open("w", newline="", encoding="utf-8") as f:
-        w = csv.writer(f); w.writerow(["filme", "genero"])
-        for genero, filmes in FILMES.items():
-            for filme in filmes: w.writerow([filme, genero])
-        for filme in DOCS: w.writerow([filme, "Documentario"])
-    print(len(linhas), "avaliacoes geradas")
+def atualizar_catalogo(caminho: Path = ARQUIVO_FILMES) -> None:
+    if len(CATALOGO) != 60:
+        raise ValueError("A lista de catálogo deve conter exatamente 60 filmes.")
+    with caminho.open(encoding="utf-8-sig", newline="") as arquivo:
+        leitor = csv.DictReader(arquivo)
+        campos = leitor.fieldnames
+        filmes = list(leitor)
+
+    ids_esperados = [f"f{i:03}" for i in range(1, 61)]
+    if campos is None or [filme["id"] for filme in filmes] != ids_esperados:
+        raise ValueError("O catálogo deve conter os IDs f001 a f060 em ordem.")
+
+    for filme, (titulo, genero) in zip(filmes, CATALOGO):
+        filme["titulo"] = titulo
+        filme["genero"] = genero
+
+    with caminho.open("w", encoding="utf-8", newline="") as arquivo:
+        escritor = csv.DictWriter(arquivo, fieldnames=campos, lineterminator="\n")
+        escritor.writeheader()
+        escritor.writerows(filmes)
+
+    print(f"Catálogo atualizado: {len(filmes)} filmes. Avaliações e usuários não foram alterados.")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Gera os CSVs sintéticos do projeto.")
-    parser.add_argument("--sobrescrever", action="store_true", help="substitui dados CSV existentes")
-    gerar_dados(sobrescrever=parser.parse_args().sobrescrever)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.parse_args()
+    atualizar_catalogo()

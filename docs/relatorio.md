@@ -92,3 +92,26 @@ comparar com filtragem colaborativa por matriz.
 - CORMEN, T. et al. *Algoritmos: Teoria e Prática*. Capítulo sobre buscas em grafos (BFS).
 - DIESTEL, R. *Graph Theory*. Springer.
 - HARPER, F. M.; KONSTAN, J. A. The MovieLens Datasets. *ACM TiiS*, 2015.
+
+## 9. Versão 1.1.0: recomendação híbrida e avaliação
+
+Esta seção complementa os resultados e a metodologia descritos anteriormente, sem substituir os experimentos da versão inicial.
+
+### Métodos adicionados
+
+A similaridade de cosseno representa cada usuário por um vetor de notas sobre os filmes conhecidos, atribuindo zero a filmes não avaliados. O produto escalar dividido pelo produto das normas retorna zero para usuários inexistentes ou vetores sem avaliações. O Jaccard da versão anterior foi mantido.
+
+O recomendador híbrido combina scores BFS, cosseno e grau do filme. Cada fonte é normalizada pelo maior score entre seus candidatos; o score final usa os pesos 0,40, 0,40 e 0,20, respectivamente. A diversidade aplica desconto ajustável de 0,08 por filme previamente selecionado do mesmo gênero. Recomendações registram as pontuações por fonte, gênero, colaborador e nota observada para compor a explicação.
+
+### Avaliação experimental da versão 1.1.0
+
+Foi usada uma divisão determinística por usuário com gerador pseudoaleatório de seed 42. Em cada usuário, uma parte das avaliações positivas (nota >= 4) foi ocultada, com no mínimo uma avaliação quando havia positivas. Os 31 usuários tinham avaliações relevantes para ocultação. As recomendações foram produzidas usando um novo grafo de treino, sem as arestas ocultadas; o grafo original permaneceu inalterado. Precision@5 divide os acertos por 5; Recall@5 divide pelos positivos ocultados; NDCG@5 usa relevância binária e ganho descontado por posição. Os valores abaixo são médias macro, calculadas pela execução de `main.py` com os CSVs atuais.
+
+| Algoritmo | Precision@5 | Recall@5 | NDCG@5 |
+|---|---:|---:|---:|
+| BFS | 0,187 | 0,871 | 0,655 |
+| Cosseno | 0,187 | 0,871 | 0,669 |
+| Híbrido | 0,174 | 0,823 | 0,632 |
+| Popularidade | 0,045 | 0,194 | 0,152 |
+
+Os números são resultados experimentais do conjunto sintético atual (31 usuários, 27 filmes e 185 avaliações); não demonstram desempenho em dados reais. O conjunto é pequeno, a avaliação não é temporal e os pesos não foram ajustados. O cosseno usa notas brutas, sem subtrair a média individual. A tabela nova não altera os resultados leave-one-out documentados para a versão anterior.

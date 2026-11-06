@@ -1,28 +1,61 @@
-filme,genero
-Matrix,Ficcao
-Interestelar,Ficcao
-Blade Runner,Ficcao
-A Chegada,Ficcao
-Ex Machina,Ficcao
-Duna,Ficcao
-Inception,Ficcao
-O Exorcista,Terror
-Hereditario,Terror
-Corra!,Terror
-Um Lugar Silencioso,Terror
-It: A Coisa,Terror
-O Iluminado,Terror
-Titanic,Romance
-Diario de uma Paixao,Romance
-La La Land,Romance
-Orgulho e Preconceito,Romance
-Questao de Tempo,Romance
-Antes do Amanhecer,Romance
-Toy Story,Animacao
-Procurando Nemo,Animacao
-Viagem de Chihiro,Animacao
-Up,Animacao
-Divertida Mente,Animacao
-Shrek,Animacao
-Democracia em Vertigem,Documentario
-Cosmos,Documentario
+id,titulo,genero,sinopse,ano,nota_media
+f001,Mad Max: Estrada da Fúria,Ação,Uma escolha muda a realidade de um programador.,1999,4.50
+f002,John Wick,Ação,Uma equipe enfrenta uma missão de alto risco.,2022,4.56
+f003,Duro de Matar,Ação,Uma piloto protege sua cidade em crise.,2021,4.22
+f004,Gladiador,Ação,Agentes correm contra o tempo.,2024,3.50
+f005,Indiana Jones e os Caçadores da Arca Perdida,Aventura,Uma jornada por um mundo distante e exuberante.,2009,4.41
+f006,Jurassic Park,Aventura,Exploradores seguem um mapa perdido.,2020,4.40
+f007,Piratas do Caribe: A Maldição do Pérola Negra,Aventura,Uma família parte em busca de um lugar lendário.,2023,4.30
+f008,Jumanji,Aventura,Uma expedição revela caminhos desconhecidos.,2019,4.55
+f009,Toy Story,Animação,Amigos descobrem coragem em uma grande aventura.,2021,4.09
+f010,Procurando Nemo,Animação,Uma cidade ganha vida em desenhos coloridos.,2022,4.11
+f011,Shrek,Animação,Robôs inventores aprendem a trabalhar juntos.,2020,4.29
+f012,A Viagem de Chihiro,Animação,Uma animação musical sobre amizade.,2024,3.86
+f013,As Branquelas,Comédia,Um plano simples vira uma confusão divertida.,2022,4.00
+f014,O Auto da Compadecida,Comédia,Dois vizinhos descobrem afinidades inesperadas.,2021,4.12
+f015,"Se Beber, Não Case!",Comédia,Uma viagem familiar cheia de imprevistos.,2019,3.91
+f016,Feitiço do Tempo,Comédia,Uma comediante tenta recomeçar a carreira.,2023,3.88
+f017,Um Sonho de Liberdade,Drama,Uma família revisita histórias guardadas.,2020,3.38
+f018,À Espera de um Milagre,Drama,Dois irmãos enfrentam escolhas diferentes.,2021,3.62
+f019,Forrest Gump,Drama,Uma mudança transforma a rotina de uma artista.,2023,4.10
+f020,O Pianista,Drama,Uma comunidade se une diante de uma perda.,2018,4.00
+f021,Diário de uma Paixão,Romance,Um encontro casual aproxima dois escritores.,2022,3.71
+f022,Orgulho e Preconceito,Romance,Uma viagem inspira um novo começo.,2020,4.08
+f023,Titanic,Romance,Um casal tenta se reencontrar após anos.,2024,4.43
+f024,Como Eu Era Antes de Você,Romance,Uma amizade antiga se transforma em amor.,2019,4.12
+f025,Interestelar,Ficção científica,Uma equipe busca um futuro para a humanidade.,2014,4.33
+f026,Matrix,Ficção científica,Uma pesquisadora recebe um sinal no espaço.,2021,4.56
+f027,Blade Runner 2049,Ficção científica,Colonos enfrentam escolhas em outro planeta.,2023,4.50
+f028,De Volta para o Futuro,Ficção científica,Uma inteligência desconhecida altera a comunicação.,2020,4.50
+f029,Harry Potter e a Pedra Filosofal,Fantasia,Uma aprendiz encontra uma passagem secreta.,2021,4.22
+f030,O Senhor dos Anéis: A Sociedade do Anel,Fantasia,Uma guardiã precisa reunir reinos rivais.,2023,3.55
+f031,O Hobbit: Uma Jornada Inesperada,Fantasia,Uma chave antiga revela poderes inesperados.,2019,4.14
+f032,A História Sem Fim,Fantasia,Criaturas míticas protegem uma aldeia.,2022,4.00
+f033,O Exorcista,Terror,Visitantes percebem sinais estranhos numa casa.,2020,3.83
+f034,Invocação do Mal,Terror,Moradores investigam ruídos no edifício.,2022,3.73
+f035,Hereditário,Terror,Uma gravação revela uma presença inquietante.,2021,3.43
+f036,A Bruxa,Terror,Um elevador para em um andar inexistente.,2024,3.93
+f037,Seven,Suspense,Uma jornalista segue pistas contraditórias.,2023,3.92
+f038,Ilha do Medo,Suspense,Um passageiro tenta reconstruir uma noite.,2020,4.50
+f039,Garota Exemplar,Suspense,Uma ligação muda o rumo de uma investigação.,2022,4.44
+f040,Os Suspeitos,Suspense,Um documento desaparecido liga desconhecidos.,2019,3.89
+f041,Entre Facas e Segredos,Mistério,Um relógio é a única pista de um desaparecimento.,2021,3.86
+f042,Assassinato no Expresso do Oriente,Mistério,Uma restauradora identifica um retrato anônimo.,2022,4.44
+f043,Zodíaco,Mistério,Um arquivo antigo esconde um enigma.,2020,4.00
+f044,A Garota no Trem,Mistério,Moradores investigam um segredo local.,2024,3.25
+f045,O Poderoso Chefão,Crime,Uma dupla investiga uma rede de fraudes.,2021,3.67
+f046,Os Bons Companheiros,Crime,Uma equipe rastreia um golpe digital.,2023,4.50
+f047,Scarface,Crime,Uma pessoa tenta provar o que viu.,2019,4.29
+f048,Os Infiltrados,Crime,Um caso reaberto desafia uma delegacia.,2022,4.12
+f049,Free Solo,Documentário,Pesquisadores acompanham a vida marinha.,2022,4.14
+f050,O Dilema das Redes,Documentário,Comunidades falam sobre conservação.,2021,4.00
+f051,Amy,Documentário,O cotidiano de quem transforma espaços urbanos.,2020,4.00
+f052,Senna,Documentário,Músicos registram ofícios tradicionais.,2023,3.90
+f053,Cantando na Chuva,Musical,Uma banda busca espaço para tocar.,2021,4.00
+f054,Chicago,Musical,Artistas se preparam para um festival.,2023,4.71
+f055,Os Miseráveis,Musical,Uma compositora encontra inspiração inesperada.,2020,4.31
+f056,O Rei do Show,Musical,Uma família se reconecta por meio da música.,2024,3.73
+f057,O Resgate do Soldado Ryan,Guerra,Cartas preservam histórias de um conflito.,2019,4.00
+f058,1917,Guerra,Uma equipe enfrenta decisões difíceis.,2021,4.50
+f059,Até o Último Homem,Guerra,Uma cidade inicia sua reconstrução.,2022,3.80
+f060,Apocalypse Now,Guerra,Civis buscam segurança durante a guerra.,2020,3.78
