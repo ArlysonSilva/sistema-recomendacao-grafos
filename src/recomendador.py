@@ -1,5 +1,8 @@
-"""Recomendacao baseada em caminhos usuario -> item -> usuario -> item (BFS ate dist. 3)."""
-"""Recomendadores simples baseados em grafos e notas."""
+"""Recomendadores e métricas da interface acadêmica de linha de comando.
+
+O módulo preserva as estratégias históricas por BFS, cosseno, popularidade e
+combinação híbrida. A aplicação web usa o fluxo mais direto de ``cineconecta``.
+"""
 from collections import defaultdict
 from math import log2, sqrt
 import random
@@ -12,7 +15,7 @@ PESO_DIVERSIDADE = 0.08
 
 
 def recomendar_bfs(g, usuario, n=5, nota_minima=4):
-    """Retorna lista de (item, pontuacao, usuario_que_mais_contribuiu)."""
+    """Pontua candidatos U-I-U-I e informa o usuário que mais contribuiu."""
     if usuario not in g.adj:
         return []
     dist, _ = g.bfs(usuario, limite=3)
@@ -88,7 +91,7 @@ def recomendar_cosseno(g, usuario, n=5, nota_minima=4, centralizar=False):
 
 
 def recomendar_hibrido(g, usuario, n=5, nota_minima=4, pesos=None, centralizar=False):
-    """Combina scores BFS, cosseno e popularidade normalizados em [0, 1]."""
+    """Combina BFS, cosseno e popularidade normalizados no intervalo [0, 1]."""
     avaliados = g.vizinhos(usuario) if usuario in g.adj else set()
     bfs = {filme: score for filme, score, _ in recomendar_bfs(g, usuario, len(g.itens()), nota_minima)}
     cosseno = {filme: score for filme, score, _ in recomendar_cosseno(

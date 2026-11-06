@@ -1,4 +1,4 @@
-"""Caminhos do projeto, independentes do diretório de execução."""
+"""Centraliza caminhos de dados e artefatos usados pela interface de terminal."""
 from pathlib import Path
 
 RAIZ_PROJETO = Path(__file__).resolve().parent.parent

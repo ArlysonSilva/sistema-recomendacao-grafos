@@ -1,4 +1,8 @@
-"""Experimentos comparáveis usando uma única divisão de treino e teste."""
+"""Avaliação reproduzível dos recomendadores da interface de linha de comando.
+
+Todos os cenários usam a mesma divisão de treino e teste para que as métricas
+possam ser comparadas sem alterar o grafo recebido.
+"""
 import csv
 import random
 from collections import defaultdict

@@ -1,4 +1,9 @@
-"""Dados e recomendador do CineConecta. Algoritmos simples e implementados localmente."""
+"""Núcleo usado pela API web do CineConecta.
+
+O módulo carrega os CSVs, representa avaliações em um grafo bipartido e gera
+recomendações explicáveis. Os algoritmos centrais são implementados no próprio
+projeto para que possam ser estudados diretamente.
+"""
 from __future__ import annotations
 
 import csv
@@ -7,16 +12,21 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "dados"
-GENRES = ["Ação", "Aventura", "Animação", "Comédia", "Drama", "Romance", "Ficção científica", "Fantasia", "Terror", "Suspense", "Mistério", "Crime", "Documentário", "Musical", "Guerra"]
-
-
 class GrafoFilmes:
-    """Grafo bipartido: adjacência simétrica com nota como peso da aresta."""
+    """Grafo bipartido de usuários e filmes armazenado por lista de adjacência.
+
+    ``tipo`` identifica a partição de cada vértice. ``adj`` guarda a mesma
+    avaliação nos dois sentidos: ``adj[usuario][filme]`` e
+    ``adj[filme][usuario]`` contêm a nota de 1 a 5 da aresta.
+    """
+
     def __init__(self):
+        """Inicializa um grafo vazio."""
         self.adj: dict[str, dict[str, int]] = {}
         self.tipo: dict[str, str] = {}
 
     def add_vertice(self, ident: str, tipo: str) -> None:
+        """Inclui um vértice e impede que ele pertença às duas partições."""
         if tipo not in {"usuario", "filme"}:
             raise ValueError("Tipo de vértice deve ser usuario ou filme")
         if ident in self.tipo and self.tipo[ident] != tipo:
@@ -25,6 +35,7 @@ class GrafoFilmes:
         self.adj.setdefault(ident, {})
 
     def add_avaliacao(self, usuario: str, filme: str, nota: int) -> None:
+        """Cria ou atualiza a aresta usuário-filme com uma nota de 1 a 5."""
         if not 1 <= int(nota) <= 5:
             raise ValueError("A nota deve estar entre 1 e 5")
         self.add_vertice(usuario, "usuario")
@@ -33,12 +44,19 @@ class GrafoFilmes:
         self.adj[filme][usuario] = int(nota)
 
     def grau(self, ident: str) -> int:
+        """Retorna a quantidade de arestas incidentes no vértice."""
         return len(self.adj.get(ident, {}))
 
     def vizinhos(self, ident: str) -> set[str]:
+        """Retorna os identificadores ligados diretamente ao vértice."""
         return set(self.adj.get(ident, {}))
 
     def bfs(self, origem: str, max_distancia: int | None = None) -> tuple[dict[str, int], dict[str, str | None]]:
+        """Percorre o grafo em largura e retorna distâncias e predecessores.
+
+        A fila visita primeiro todos os vértices de uma distância antes de
+        avançar ao próximo nível. ``max_distancia`` limita essa expansão.
+        """
         dist = {origem: 0} if origem in self.adj else {}
         pai: dict[str, str | None] = {origem: None} if origem in self.adj else {}
         fila = deque(dist)
@@ -53,7 +71,7 @@ class GrafoFilmes:
         return dist, pai
 
     def caminhos_positivos(self, origem: str, max_distancia: int = 3) -> list[list[str]]:
-        """Enumera com BFS caminhos simples formados apenas por notas >= 4."""
+        """Enumera por BFS caminhos simples que usam somente notas 4 ou 5."""
         if origem not in self.adj:
             return []
         fila = deque([[origem]])
@@ -71,6 +89,7 @@ class GrafoFilmes:
         return caminhos
 
     def caminho_minimo(self, inicio: str, fim: str) -> list[str] | None:
+        """Reconstrói um caminho mínimo usando os predecessores da BFS."""
         dist, pai = self.bfs(inicio)
         if fim not in dist:
             return None
@@ -81,6 +100,7 @@ class GrafoFilmes:
         return caminho[::-1]
 
     def componentes(self) -> list[set[str]]:
+        """Separa as componentes conexas, da maior para a menor."""
         restantes, resultado = set(self.adj), []
         while restantes:
             origem = next(iter(restantes))
@@ -90,37 +110,69 @@ class GrafoFilmes:
         return sorted(resultado, key=len, reverse=True)
 
     def eh_bipartido(self) -> bool:
+        """Confirma que toda aresta liga vértices de partições diferentes."""
         return all(self.tipo[a] != self.tipo[b] for a, viz in self.adj.items() for b in viz)
 
     def positivos(self, usuario: str) -> set[str]:
-        return {f for f, nota in self.adj.get(usuario, {}).items() if self.tipo.get(f) == "filme" and nota >= 4}
+        """Retorna os filmes que o usuário avaliou com nota 4 ou 5."""
+        return {
+            filme
+            for filme, nota in self.adj.get(usuario, {}).items()
+            if self.tipo.get(filme) == "filme" and nota >= 4
+        }
 
     def jaccard(self, a: str, b: str) -> float:
-        x, y = self.positivos(a), self.positivos(b)
-        return len(x & y) / len(x | y) if x | y else 0.0
+        """Calcula |A ∩ B| / |A ∪ B| sobre os filmes positivos dos usuários."""
+        positivos_a, positivos_b = self.positivos(a), self.positivos(b)
+        uniao = positivos_a | positivos_b
+        return len(positivos_a & positivos_b) / len(uniao) if uniao else 0.0
 
 
 def carregar(data_dir: Path = DATA) -> tuple[GrafoFilmes, dict, dict]:
-    def linhas(nome):
+    """Carrega usuários, filmes e avaliações dos três CSVs da aplicação.
+
+    Todos os usuários e filmes são criados mesmo quando não possuem arestas.
+    O retorno reúne o grafo e os dicionários de metadados indexados por ID.
+    """
+
+    def linhas(nome: str) -> list[dict[str, str]]:
         with (data_dir / nome).open(encoding="utf-8-sig", newline="") as arq:
             return list(csv.DictReader(arq))
-    usuarios = {r["id"]: {**r, "generos_preferidos": r["generos_preferidos"].split("|")} for r in linhas("usuarios.csv")}
+
+    usuarios = {
+        registro["id"]: {
+            **registro,
+            "generos_preferidos": registro["generos_preferidos"].split("|"),
+        }
+        for registro in linhas("usuarios.csv")
+    }
     filmes = {r["id"]: r for r in linhas("filmes.csv")}
     grafo = GrafoFilmes()
-    for uid in usuarios: grafo.add_vertice(uid, "usuario")
-    for fid in filmes: grafo.add_vertice(fid, "filme")
-    for r in linhas("avaliacoes.csv"):
-        grafo.add_avaliacao(r["usuario_id"], r["filme_id"], int(r["nota"]))
+    for usuario_id in usuarios:
+        grafo.add_vertice(usuario_id, "usuario")
+    for filme_id in filmes:
+        grafo.add_vertice(filme_id, "filme")
+    for registro in linhas("avaliacoes.csv"):
+        grafo.add_avaliacao(
+            registro["usuario_id"],
+            registro["filme_id"],
+            int(registro["nota"]),
+        )
     return grafo, usuarios, filmes
 
 
 def recomendacoes(grafo: GrafoFilmes, usuarios: dict, filmes: dict, usuario_id: str, quantidade: int = 20) -> list[dict]:
-    """Recomenda filmes com evidência BFS positiva U-F-U-F e Jaccard positivo."""
+    """Gera recomendações explicáveis por caminhos positivos U-F-U-F.
+
+    A BFS encontra filmes candidatos a três arestas do usuário inicial. Um
+    candidato é descartado quando já foi avaliado. Cada colaborador contribui
+    uma única vez por filme, com peso igual ao Jaccard entre os dois usuários.
+    A pontuação final é a média ponderada ``Σ(nota × Jaccard) / Σ(Jaccard)``.
+    """
     if usuario_id not in usuarios:
         raise KeyError(usuario_id)
     vistos = grafo.vizinhos(usuario_id)
     candidatos: dict[str, dict] = defaultdict(lambda: {"contribuidores": {}, "caminhos": []})
-    # BFS percorre apenas as arestas positivas e retorna caminhos de três arestas.
     positivos = grafo.positivos(usuario_id)
     for caminho in grafo.caminhos_positivos(usuario_id, 3):
         _, compartilhado, colaborador, candidato = caminho
@@ -130,18 +182,88 @@ def recomendacoes(grafo: GrafoFilmes, usuarios: dict, filmes: dict, usuario_id: 
         if similaridade <= 0:
             continue
         nota = grafo.adj[colaborador][candidato]
-        reg = candidatos[candidato]
-        reg["contribuidores"].setdefault(colaborador, {"usuario_id": colaborador, "nome": usuarios[colaborador]["nome"], "nota": nota, "similaridade": similaridade, "filmes_em_comum": sorted(positivos & grafo.positivos(colaborador))})
-        if all(p["usuario_id"] != colaborador or p["filme_compartilhado"] != compartilhado for p in reg["caminhos"]):
-            reg["caminhos"].append({"vertices": caminho, "usuario_id": colaborador, "filme_compartilhado": compartilhado, "nota_colaborador": nota, "similaridade": similaridade})
+        registro = candidatos[candidato]
+        registro["contribuidores"].setdefault(
+            colaborador,
+            {
+                "usuario_id": colaborador,
+                "nome": usuarios[colaborador]["nome"],
+                "nota": nota,
+                "similaridade": similaridade,
+                "filmes_em_comum": sorted(
+                    positivos & grafo.positivos(colaborador)
+                ),
+            },
+        )
+        caminho_repetido = any(
+            item["usuario_id"] == colaborador
+            and item["filme_compartilhado"] == compartilhado
+            for item in registro["caminhos"]
+        )
+        if not caminho_repetido:
+            registro["caminhos"].append(
+                {
+                    "vertices": caminho,
+                    "usuario_id": colaborador,
+                    "filme_compartilhado": compartilhado,
+                    "nota_colaborador": nota,
+                    "similaridade": similaridade,
+                }
+            )
+
     resultado = []
-    for fid, info in candidatos.items():
+    for filme_id, info in candidatos.items():
         contrib = list(info["contribuidores"].values())
         peso = sum(c["similaridade"] for c in contrib)
         score = sum(c["nota"] * c["similaridade"] for c in contrib) / peso if peso else 0.0
-        resultado.append({"filme_id": fid, "titulo": filmes[fid]["titulo"], "genero": filmes[fid]["genero"], "pontuacao": round(score, 3), "colaboradores": len(contrib), "similaridade_media": sum(c["similaridade"] for c in contrib) / len(contrib), "contribuidores": contrib, "caminhos": info["caminhos"], "motivo": f"{len(contrib)} usuário(s) com preferências semelhantes avaliaram positivamente este filme."})
-    return sorted(resultado, key=lambda x: (-x["pontuacao"], -x["colaboradores"], x["titulo"]))[:quantidade]
+        resultado.append(
+            {
+                "filme_id": filme_id,
+                "titulo": filmes[filme_id]["titulo"],
+                "genero": filmes[filme_id]["genero"],
+                "pontuacao": round(score, 3),
+                "colaboradores": len(contrib),
+                "similaridade_media": sum(
+                    c["similaridade"] for c in contrib
+                ) / len(contrib),
+                "contribuidores": contrib,
+                "caminhos": info["caminhos"],
+                "motivo": (
+                    f"{len(contrib)} usuário(s) com preferências semelhantes "
+                    "avaliaram positivamente este filme."
+                ),
+            }
+        )
+    return sorted(
+        resultado,
+        key=lambda item: (
+            -item["pontuacao"],
+            -item["colaboradores"],
+            item["titulo"],
+        ),
+    )[:quantidade]
 
 
 def similares(grafo: GrafoFilmes, usuarios: dict, usuario_id: str, limite: int = 8) -> list[dict]:
-    return sorted(([{"id": uid, "nome": usuarios[uid]["nome"], "similaridade": grafo.jaccard(usuario_id, uid), "filmes_em_comum": sorted(grafo.positivos(usuario_id) & grafo.positivos(uid))} for uid in usuarios if uid != usuario_id and grafo.jaccard(usuario_id, uid) > 0]), key=lambda x: (-x["similaridade"], x["nome"]))[:limite]
+    """Lista usuários com Jaccard positivo e os filmes positivos em comum."""
+    positivos_usuario = grafo.positivos(usuario_id)
+    resultado = []
+    for outro_id in usuarios:
+        if outro_id == usuario_id:
+            continue
+        similaridade = grafo.jaccard(usuario_id, outro_id)
+        if similaridade > 0:
+            resultado.append(
+                {
+                    "id": outro_id,
+                    "nome": usuarios[outro_id]["nome"],
+                    "similaridade": similaridade,
+                    "filmes_em_comum": sorted(
+                        positivos_usuario & grafo.positivos(outro_id)
+                    ),
+                }
+            )
+    return sorted(
+        resultado,
+        key=lambda item: (-item["similaridade"], item["nome"]),
+    )[:limite]

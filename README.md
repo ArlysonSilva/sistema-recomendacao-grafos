@@ -1,97 +1,166 @@
-# Sistema de recomendação de filmes com grafos bipartidos
+# CineConecta
 
-Projeto acadêmico de Engenharia da Computação. A versão 1.1.0 amplia o recomendador existente, preservando o grafo bipartido próprio, os dados sintéticos, o BFS e o ranking bayesiano. Não usa bibliotecas de Machine Learning.
+O CineConecta é um sistema de recomendação de filmes que utiliza grafos bipartidos para identificar relações entre usuários e descobrir novos filmes a partir de avaliações compartilhadas.
 
-## Objetivos
+O projeto foi desenvolvido para estudo em Engenharia da Computação. Seu foco é tornar visíveis conceitos de Teoria dos Grafos — vértices, arestas, grau, componentes conexas, busca em largura e caminhos — em um recomendador explicável.
 
-- Representar avaliações como arestas ponderadas entre usuários e filmes.
-- Explorar conectividade e vizinhanças para produzir recomendações explicáveis.
-- Combinar estrutura do grafo, notas, popularidade e diversidade de gêneros.
-- Comparar algoritmos com métricas de ranking em uma divisão treino/teste reproduzível.
+## Tecnologias
 
-## Modelo e algoritmos
+- Backend: Python 3.10+, FastAPI, Uvicorn e Pydantic.
+- Frontend: React 18, TypeScript e Vite.
+- Testes: pytest e HTTPX.
+- Visualizações opcionais de terminal: NetworkX e Matplotlib.
+- Dados: arquivos CSV versionados em `dados/`.
 
-O grafo possui partições de usuários e filmes; cada avaliação cria uma aresta com nota de 1 a 5. A estrutura é uma lista de adjacência implementada em `src/grafo.py`. A BFS encontra usuários a distância dois e filmes a distância três. O Jaccard continua disponível e mede filmes em comum dividido pela união dos filmes avaliados.
+O núcleo do recomendador web e a visualização SVG do grafo são implementados no próprio projeto. NetworkX não participa da API nem do cálculo das recomendações.
 
-### Similaridade de cosseno
-
-Cada usuário é representado por um vetor de notas, com zero nos filmes não avaliados. O cálculo manual é:
-
-```text
-cos(A, B) = (A · B) / (||A|| × ||B||)
-```
-
-Vetores nulos e usuários inexistentes retornam zero. Para as notas positivas usadas atualmente, a similaridade fica entre zero e um.
-
-### Recomendações e combinação híbrida
-
-O método por cosseno agrega para cada filme candidato `similaridade × nota/5`, usando avaliações iguais ou superiores a 4. O método BFS anterior também prioriza notas a partir de 4. O método híbrido normaliza cada fonte dividindo os scores pelo máximo da própria fonte e combina:
+## Estrutura de pastas
 
 ```text
-score = 0,40 × BFS_normalizado
-      + 0,40 × cosseno_normalizado
-      + 0,20 × popularidade_normalizada
+backend/
+  api.py              endpoints HTTP e estado temporário da simulação
+dados/                usuários, filmes e avaliações em CSV
+docs/
+  ARQUITETURA.md      módulos e fluxo dos dados
+  GUIA_DO_CODIGO.md   explicação dos arquivos, funções e componentes
+frontend/
+  src/App.tsx         navegação e coordenação das cinco telas
+  src/HomePage.tsx    apresentação acadêmica da tela inicial
+  src/types.ts        contratos de dados recebidos da API
+  src/style.css       identidade visual e responsividade
+src/
+  cineconecta.py      grafo e recomendador usados pela aplicação web
+  grafo.py            implementação acadêmica histórica usada pelo terminal
+  recomendador.py     estratégias e métricas da interface de terminal
+  experimentos.py     comparação reproduzível dos algoritmos históricos
+  visualizacao.py     geração opcional de imagens
+tests/                testes do núcleo, da API e dos algoritmos históricos
+main.py               apresentação e experimentos em linha de comando
+gerar_dados.py        catálogo e geração controlada dos CSVs
 ```
 
-Os pesos são constantes ajustáveis em `src/recomendador.py`. Popularidade é o grau do filme, isto é, quantidade de avaliações. Empates são resolvidos pelo nome do filme. Filmes já avaliados pelo usuário são excluídos; sem candidatos personalizados, a popularidade ainda oferece um fallback.
+As duas implementações de grafo são preservadas porque atendem fluxos distintos. A aplicação web usa `GrafoFilmes`, em `src/cineconecta.py`. O terminal e seus experimentos anteriores usam `GrafoBipartido`, em `src/grafo.py`. A relação entre elas está detalhada em [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
 
-### Diversidade e explicabilidade
+Para estudar a implementação arquivo por arquivo, consulte o [Guia do código](docs/GUIA_DO_CODIGO.md).
 
-A diversificação escolhe os itens em ordem gulosa e desconta `0,08` por ocorrência anterior do mesmo gênero. O desconto é ajustável e não remove candidatos. Filmes sem gênero não recebem penalidade. Cada recomendação híbrida informa filme, score final, contribuições normalizadas de BFS/cosseno/popularidade, gênero, usuário colaborador, nota desse colaborador e motivo derivado dos cálculos.
+## Modelo do grafo bipartido
 
-### Avaliação
+O grafo é composto por dois conjuntos disjuntos de vértices:
 
-Para cada usuário, são ocultadas aleatoriamente, com `seed=42`, 20% das avaliações relevantes (nota >= 4), arredondando a quantidade e garantindo ao menos uma ocultação quando há avaliação relevante. O grafo de treino é construído sem essas arestas, e as recomendações são calculadas somente nele. A avaliação macro agrega os 31 usuários, todos com ao menos uma avaliação relevante ocultada. A divisão e a avaliação não alteram o grafo original.
+- **Usuários:** pessoas que atribuem notas.
+- **Filmes:** títulos disponíveis no catálogo.
+
+Uma avaliação cria uma aresta entre um usuário e um filme. A nota de 1 a 5 é armazenada como peso dessa aresta. A aplicação mantém uma lista de adjacência simétrica: a nota pode ser consultada a partir do usuário ou do filme.
 
 ```text
-Precision@K = relevantes recomendados / K
-Recall@K    = relevantes recomendados / relevantes ocultados
-DCG@K       = soma((2^rel_i - 1) / log2(i + 1)), com posições começando em 1
-NDCG@K      = DCG@K / DCG ideal
+Usuário --(nota)--> Filme
 ```
 
-### Resultados experimentais
+Não existem arestas usuário–usuário nem filme–filme. O grau de um usuário indica quantos filmes ele avaliou; o grau de um filme indica quantas avaliações recebeu.
 
-Métricas calculadas na execução atual com os CSVs do repositório, K=5 e seed 42:
+## Algoritmos da aplicação web
 
-| Algoritmo | Precision@5 | Recall@5 | NDCG@5 |
-|---|---:|---:|---:|
-| BFS | 0,187 | 0,871 | 0,655 |
-| Cosseno | 0,187 | 0,871 | 0,669 |
-| Híbrido | 0,174 | 0,823 | 0,632 |
-| Popularidade | 0,045 | 0,194 | 0,152 |
+### Avaliações positivas
 
-São resultados sobre apenas 31 usuários, 27 filmes e 185 avaliações sintéticas, não uma estimativa de desempenho em dados reais. A escolha dos dados e dos parâmetros afeta fortemente as métricas.
+Notas 4 e 5 são positivas. Notas 1, 2 e 3 continuam armazenadas no grafo, mas não formam caminhos de recomendação nem conjuntos de interesse positivo.
 
-## Estrutura
+### Similaridade de Jaccard
+
+Cada usuário é representado pelo conjunto de filmes que avaliou positivamente. Para usuários `A` e `B`:
 
 ```text
-dados/       CSVs de avaliações e catálogo
-src/         grafo, recomendador, visualizações e caminhos
-outputs/     imagens geradas
-docs/        relatório acadêmico e saída textual
-tests/       testes automatizados
-main.py      análise e interface de linha de comando
-gerar_dados.py gerador sintético reproduzível
+J(A, B) = |A ∩ B| / |A ∪ B|
 ```
+
+A interseção contém os filmes positivos em comum. A união contém todos os filmes avaliados positivamente por pelo menos um dos dois usuários. Jaccard mede sobreposição de preferências; não é a média das notas.
+
+### Busca em largura (BFS)
+
+A BFS percorre somente arestas positivas e enumera caminhos simples de três arestas:
+
+```text
+Usuário inicial → Filme compartilhado → Usuário semelhante → Filme candidato
+```
+
+O filme candidato é aceito somente quando ainda não foi avaliado pelo usuário inicial. Cada caminho é mantido no resultado para explicar a origem da recomendação.
+
+### Pontuação
+
+Um colaborador contribui uma vez para cada filme candidato. Sua nota recebe como peso a similaridade Jaccard com o usuário inicial:
+
+```text
+pontuação = Σ(nota do colaborador × Jaccard) / Σ(Jaccard)
+```
+
+O resultado é uma média ponderada das avaliações observadas no grafo. Os gêneros classificam o catálogo e ajudam nas análises visuais, mas não participam do Jaccard, da BFS ou dessa pontuação.
+
+### Algoritmos históricos do terminal
+
+`main.py` mantém, separadamente, estratégias de BFS, cosseno, popularidade e combinação híbrida, além de métricas e gráficos acadêmicos. Elas não alteram o resultado exibido pela API web. Essa separação evita confundir a pontuação atual da aplicação com os experimentos anteriores.
 
 ## Instalação e execução
 
-Requer Python 3.9 ou superior. Na raiz do repositório:
+### Backend
+
+Na raiz do repositório:
 
 ```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-python -m pytest -v
-python main.py
-python main.py --usuario user10
-python main.py --plot
-python main.py --salvar-saida
+python -m uvicorn backend.api:app --reload
 ```
 
-`--usuario` seleciona o usuário para a apresentação das recomendações novas. Os exemplos anteriores continuam sendo exibidos. `--plot` grava os gráficos em `outputs/`; `--salvar-saida` grava a saída em `docs/saida_execucao.txt`.
+A API ficará disponível em `http://localhost:8000`. A documentação interativa do FastAPI pode ser consultada em `http://localhost:8000/docs`.
 
-Para gerar os dados, execute `python gerar_dados.py`. Os arquivos existentes são protegidos; para regenerá-los explicitamente, use `python gerar_dados.py --sobrescrever`.
+### Frontend
 
-## Dependências e limitações
+Em outro terminal:
 
-NetworkX e Matplotlib são usados somente nas visualizações; pytest executa os testes. O núcleo dos algoritmos usa a biblioteca padrão. O cosseno considera notas como valores positivos sem centralização pela média, e os dados pequenos/sintéticos limitam a generalização. A avaliação é um holdout por usuário sem divisão temporal ou ajuste dos pesos.
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Abra `http://localhost:5173`. Por padrão, o frontend consulta `http://localhost:8000/api`. Para usar outro endereço, defina `VITE_API_URL` antes de iniciar o Vite.
+
+### Testes e build
+
+```powershell
+# raiz do repositório
+python -m pytest -q
+
+# pasta frontend
+npm run build
+```
+
+### Interface de terminal opcional
+
+```powershell
+python main.py
+python main.py --experimentos
+python main.py --plot
+```
+
+`--experimentos` atualiza o CSV comparativo em `outputs/`; `--plot` gera imagens estáticas. Para regenerar os dados, consulte `python gerar_dados.py --help` antes de executar, pois os CSVs são a base da aplicação.
+
+## Como utilizar as telas
+
+1. **Início:** percorra a explicação do modelo, Jaccard, BFS e pontuação. Os totais e o exemplo real vêm da API. Os gráficos descritivos permanecem recolhidos no final.
+2. **Usuários:** selecione uma pessoa para consultar notas, gêneros preferidos e usuários com Jaccard positivo.
+3. **Recomendações:** escolha um usuário, gere o ranking e abra um filme para ver colaboradores e caminhos explicativos.
+4. **Grafo:** alterne entre grafo completo, vizinhança, avaliações positivas, vizinhança expandida e caminho de uma recomendação.
+5. **Simulação:** cadastre uma pessoa temporária e registre avaliações. O grafo, os usuários semelhantes e as recomendações são recalculados após cada nota. Use “Ver caminho” para consultar a justificativa e “Restaurar” para apagar a simulação.
+
+A simulação existe apenas na memória do backend. Reiniciar o servidor ou usar “Restaurar” descarta as alterações; os CSVs não são modificados.
+
+## Limitações conhecidas
+
+- A base é pequena e sintética; não representa o comportamento de uma plataforma real.
+- O Jaccard considera apenas a presença de avaliações positivas, não a diferença entre notas 4 e 5.
+- Usuários sem interesses positivos em comum não geram recomendações personalizadas pelo fluxo web.
+- A BFS fica restrita às conexões existentes e pode reforçar grupos já conectados.
+- A simulação é global ao processo, sem persistência, autenticação ou separação por sessão.
+- A pontuação não é uma previsão de preferência futura e não usa os gêneros dos filmes.
+- A aplicação não possui paginação; o volume atual permite carregar a base completa para exploração.

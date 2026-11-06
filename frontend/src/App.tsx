@@ -1,122 +1,22 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+
+import HomePage from './HomePage'
+import type {
+  Analysis,
+  Example,
+  GraphData,
+  Movie,
+  Preferences,
+  Recommendation,
+  SimilarUser,
+  SimulationState,
+  Stats,
+  User,
+} from './types'
 
 const API = import.meta.env.VITE_API_URL || 'http://localhost:8000/api'
 
-type Stats = {
-  usuarios: number
-  filmes: number
-  avaliacoes: number
-  componentes_conexas: number
-}
-
-type User = {
-  id: string
-  nome: string
-  generos_preferidos: string[]
-  avaliacoes: number
-  grau: number
-}
-
-type Movie = {
-  id: string
-  titulo: string
-  genero: string
-  avaliacoes: number
-  grau: number
-}
-
-type MovieRating = {
-  filme_id: string
-  titulo: string
-  genero: string
-  nota: number
-}
-
-type Preferences = {
-  usuario: User
-  avaliacoes: MovieRating[]
-  generos_preferidos: string[]
-  grau: number
-}
-
-type SimilarUser = {
-  id: string
-  nome: string
-  similaridade: number
-  filmes_em_comum: string[]
-}
-
-type RecommendationPath = {
-  vertices: string[]
-  usuario_id: string
-  filme_compartilhado: string
-  nota_colaborador: number
-  similaridade: number
-}
-
-type Contributor = {
-  usuario_id: string
-  nome: string
-  nota: number
-  similaridade: number
-  filmes_em_comum: string[]
-}
-
-type Recommendation = {
-  filme_id: string
-  titulo: string
-  genero: string
-  pontuacao: number
-  colaboradores: number
-  caminhos: RecommendationPath[]
-  contribuidores: Contributor[]
-}
-
-type GraphData = {
-  nodes: { id: string; nome: string; tipo: 'usuario' | 'filme'; grau: number; papel: string; similaridade: number | null }[]
-  edges: { source: string; target: string; nota: number; positiva: boolean; direta: boolean; simulada: boolean; destacado: boolean; rotas?: number[] }[]
-  componentes_conexas: number
-  caminhos: RecommendationPath[]
-  mensagem: string
-  modo: string
-}
-
-type Example = {
-  disponivel: boolean
-  mensagem?: string
-  usuario?: { id: string; nome: string }
-  filme_compartilhado?: { id: string; titulo: string }
-  colaborador?: { id: string; nome: string }
-  filme_recomendado?: { id: string; titulo: string }
-  nota_usuario?: number
-  nota_compartilhada?: number
-  nota_colaborador?: number
-  similaridade?: number
-  pontuacao?: number
-}
-
-type Analysis = {
-  filmes_por_genero: { nome: string; valor: number }[]
-  avaliacoes_por_genero: { nome: string; valor: number }[]
-  avaliacoes_por_usuario: { id: string; nome: string; valor: number }[]
-  filmes_mais_avaliados: { id: string; titulo: string; valor: number }[]
-  grau_usuarios: { nome: string; valor: number }[]
-  grau_filmes: { titulo: string; valor: number }[]
-  similaridade_usuarios: { usuario: string; outro: string; similaridade: number }[]
-}
-
-type SimulationChange = {
-  usuario_nome: string
-  filme_titulo: string
-  nota_nova: number
-}
-
-type Comparison = {
-  antes: Recommendation[]
-  depois: Recommendation[]
-  alteracoes: SimulationChange[]
-}
-
+/** Executa chamadas à API e uniformiza as mensagens de erro da interface. */
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API}${path}`, {
     headers: { 'Content-Type': 'application/json' },
@@ -129,6 +29,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
   return response.json() as Promise<T>
 }
 
+/** Coordena a navegação entre as cinco telas e seus estados compartilhados. */
 function App() {
   const pages = ['Início', 'Usuários', 'Recomendações', 'Grafo', 'Simulação']
   const [page, setPage] = useState('Início')
@@ -146,12 +47,11 @@ function App() {
   const [generated, setGenerated] = useState(false)
   const [graph, setGraph] = useState<GraphData | null>(null)
   const [graphMode, setGraphMode] = useState('todas')
-  const [simUser, setSimUser] = useState('')
-  const [simPreferences, setSimPreferences] = useState<Preferences | null>(null)
+  const [simName, setSimName] = useState('')
+  const [simulation, setSimulation] = useState<SimulationState | null>(null)
   const [simMovie, setSimMovie] = useState('')
   const [simRating, setSimRating] = useState(5)
-  const [simChanges, setSimChanges] = useState<SimulationChange[]>([])
-  const [comparison, setComparison] = useState<Comparison | null>(null)
+  const [simSelectedRecommendation, setSimSelectedRecommendation] = useState<Recommendation | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [refreshSimulation, setRefreshSimulation] = useState(0)
@@ -169,10 +69,8 @@ function App() {
     setAnalysis(newAnalysis)
 
     request<Example>('/exemplo').then(setExample).catch(reason => setError(reason.message))
-    const mariana = newUsers.find(user => user.nome === 'Mariana Costa')?.id
-    const firstUser = mariana || newUsers[0]?.id || ''
+    const firstUser = newUsers[0]?.id || ''
     setSelectedUser(current => current || firstUser)
-    setSimUser(current => current || firstUser)
   }
 
   useEffect(() => {
@@ -195,29 +93,34 @@ function App() {
   }, [selectedUser, refreshSimulation])
 
   useEffect(() => {
-    if (!simUser) return
-    request<Preferences>(`/usuarios/${simUser}/preferencias`)
-      .then(newPreferences => {
-        setSimPreferences(newPreferences)
-        const rated = new Set(newPreferences.avaliacoes.map(item => item.filme_id))
+    if (page !== 'Simulação') return
+    request<SimulationState>('/simulacao')
+      .then(state => {
+        setSimulation(state)
+        const rated = new Set(state.avaliacoes.map(item => item.filme_id))
         setSimMovie(current => current && !rated.has(current)
           ? current
           : movies.find(movie => !rated.has(movie.id))?.id || '')
       })
       .catch(reason => setError(reason.message))
-  }, [simUser, refreshSimulation, movies])
+  }, [page, movies])
 
   useEffect(() => {
     if (page !== 'Grafo' && page !== 'Simulação') return
-    const userId = page === 'Grafo' ? selectedUser : simUser
-    if (!userId) return
-    const selectedMovie = page === 'Grafo' && graphMode === 'caminho' ? selectedRecommendation?.filme_id : undefined
+    const userId = page === 'Grafo' ? selectedUser : simulation?.usuario?.id
+    if (!userId) {
+      setGraph(null)
+      return
+    }
+    const selectedMovie = graphMode === 'caminho'
+      ? (page === 'Grafo' ? selectedRecommendation : simSelectedRecommendation)?.filme_id
+      : undefined
     const query = new URLSearchParams({ usuario: userId, modo: graphMode })
     if (selectedMovie) query.set('filme_recomendado', selectedMovie)
     request<GraphData>(`/grafo?${query}`)
       .then(setGraph)
       .catch(reason => setError(reason.message))
-  }, [page, selectedUser, simUser, selectedRecommendation, graphMode, refreshSimulation])
+  }, [page, selectedUser, simulation?.usuario?.id, selectedRecommendation, simSelectedRecommendation, graphMode, refreshSimulation])
 
   useEffect(() => {
     if (page !== 'Grafo' || !selectedUser || recommendations.length) return
@@ -229,6 +132,7 @@ function App() {
   function getName(id: string) {
     return users.find(user => user.id === id)?.nome
       || movies.find(movie => movie.id === id)?.titulo
+      || (simulation?.usuario?.id === id ? simulation.usuario.nome : undefined)
       || id
   }
 
@@ -247,22 +151,19 @@ function App() {
     }
   }
 
-  async function prepareExample() {
-    const mariana = users.find(user => user.nome === 'Mariana Costa')
-    if (!mariana) return
+  async function startSimulation() {
+    if (!simName.trim()) return
     try {
-      const details = await request<Preferences>(`/usuarios/${mariana.id}/preferencias`)
-      const rated = new Set(details.avaliacoes.map(item => item.filme_id))
-      const matrix = movies.find(movie => movie.titulo === 'Matrix' && !rated.has(movie.id))
-      const nextMovie = matrix || movies.find(movie => !rated.has(movie.id))
-      if (!nextMovie) {
-        setError('Mariana já avaliou todos os filmes.')
-        return
-      }
-      setSimUser(mariana.id)
-      setSimPreferences(details)
-      setSimMovie(nextMovie.id)
+      const state = await request<SimulationState>('/simulacao/usuario', {
+        method: 'POST',
+        body: JSON.stringify({ nome: simName.trim() }),
+      })
+      setSimulation(state)
+      setSimMovie(movies[0]?.id || '')
       setSimRating(5)
+      setSimSelectedRecommendation(null)
+      setGraphMode('vizinhos')
+      setRefreshSimulation(value => value + 1)
       setError('')
     } catch (reason) {
       setError((reason as Error).message)
@@ -270,27 +171,25 @@ function App() {
   }
 
   async function applySimulation() {
-    if (!simUser || !simMovie) return
+    if (!simulation?.usuario || !simMovie) return
     setError('')
     try {
-      const result = await request<{ alteracoes: SimulationChange[] }>(
+      const state = await request<SimulationState>(
         '/simulacao/avaliacao',
         {
           method: 'POST',
           body: JSON.stringify({
-            usuario_id: simUser,
+            usuario_id: simulation.usuario.id,
             filme_id: simMovie,
             nota: simRating,
           }),
         },
       )
-      const after = await request<Comparison>('/simulacao/recomendar', {
-        method: 'POST',
-        body: JSON.stringify({ usuario_id: simUser }),
-      })
-      setSimChanges(result.alteracoes)
-      setComparison(after)
-      await loadPageData()
+      setSimulation(state)
+      const rated = new Set(state.avaliacoes.map(item => item.filme_id))
+      setSimMovie(movies.find(movie => !rated.has(movie.id))?.id || '')
+      setSimSelectedRecommendation(null)
+      setGraphMode('vizinhos')
       setRefreshSimulation(value => value + 1)
     } catch (reason) {
       setError((reason as Error).message)
@@ -300,10 +199,12 @@ function App() {
   async function restoreSimulation() {
     try {
       await request('/simulacao/restaurar', { method: 'POST' })
-      setSimChanges([])
-      setComparison(null)
+      setSimulation({ ativo: false, usuario: null, avaliacoes: [], similares: [], recomendacoes: [] })
+      setSimName('')
+      setSimMovie('')
+      setSimSelectedRecommendation(null)
+      setGraph(null)
       setError('')
-      await loadPageData()
       setRefreshSimulation(value => value + 1)
     } catch (reason) {
       setError((reason as Error).message)
@@ -326,7 +227,11 @@ function App() {
             <button
               className={page === name ? 'selected' : ''}
               key={name}
-              onClick={() => { setPage(name); setError('') }}
+              onClick={() => {
+                setPage(name)
+                if (name === 'Simulação') setGraphMode('vizinhos')
+                setError('')
+              }}
             >
               {name}
             </button>
@@ -335,12 +240,12 @@ function App() {
       </aside>
 
       <main className="main">
-        <header className="header"><h1>{page}</h1></header>
+        {page !== 'Início' && <header className="header"><h1>{page}</h1></header>}
         {error && <div className="error">{error}<button onClick={() => setError('')}>Fechar</button></div>}
         {loading && <p>Carregando…</p>}
 
         {!loading && page === 'Início' && (
-          <Inicio stats={stats} analysis={analysis} example={example} />
+          <HomePage stats={stats} analysis={analysis} example={example} onNavigate={setPage} />
         )}
         {!loading && page === 'Usuários' && (
           <Usuarios
@@ -384,22 +289,21 @@ function App() {
         )}
         {!loading && page === 'Simulação' && (
           <Simulacao
-            users={users}
             movies={movies}
-            simUser={simUser}
-            setSimUser={setSimUser}
-            simPreferences={simPreferences}
+            simName={simName}
+            setSimName={setSimName}
+            simulation={simulation}
             simMovie={simMovie}
             setSimMovie={setSimMovie}
             simRating={simRating}
             setSimRating={setSimRating}
-            simChanges={simChanges}
-            comparison={comparison}
+            selectedRecommendation={simSelectedRecommendation}
+            setSelectedRecommendation={setSimSelectedRecommendation}
             graph={graph}
             graphMode={graphMode}
             setGraphMode={setGraphMode}
             getName={getName}
-            prepareExample={prepareExample}
+            start={startSimulation}
             apply={applySimulation}
             restore={restoreSimulation}
           />
@@ -409,38 +313,7 @@ function App() {
   )
 }
 
-function Inicio({ stats, analysis, example }: { stats: Stats | null; analysis: Analysis | null; example: Example | null }) {
-  const componentes = stats?.componentes_conexas
-  return <div className="home-content">
-    <p className="home-intro">CineConecta é um sistema de recomendação de filmes que utiliza um grafo bipartido para relacionar usuários, filmes e avaliações.</p>
-    <p className="home-counts">{stats?.usuarios ?? '—'} usuários · {stats?.filmes ?? '—'} filmes · {stats?.avaliacoes ?? '—'} avaliações · {componentes ?? '—'} componente{componentes === 1 ? '' : 's'} conexa{componentes === 1 ? '' : 's'}</p>
-    <section className="home-how"><h2>Como funciona</h2>
-      <ul>
-        <li><strong>Grafo bipartido:</strong> usuários e filmes são os vértices. Uma avaliação cria uma ligação entre a pessoa e o filme, armazenando a nota.</li>
-        <li><strong>Preferência positiva:</strong> avaliações 4 e 5 são consideradas positivas e utilizadas para identificar interesses em comum.</li>
-        <li><strong>Jaccard:</strong> mede a semelhança entre dois usuários comparando os filmes que ambos avaliaram positivamente.</li>
-        <li><strong>BFS:</strong> percorre as conexões do grafo por níveis para encontrar usuários relacionados e filmes que podem ser recomendados.</li>
-        <li><strong>Pontuação:</strong> combina as notas dadas pelos usuários colaboradores, considerando a similaridade entre eles.</li>
-        <li><strong>Gêneros:</strong> ajudam a identificar e apresentar as categorias dos filmes, mas não participam diretamente do cálculo atual de Jaccard ou BFS.</li>
-      </ul>
-    </section>
-    <section className="home-example"><h2>Exemplo real</h2>
-      {example?.disponivel ? <div className="example-box">
-        <p className="example-route">{example.usuario?.nome} &rarr; {example.filme_compartilhado?.titulo} &rarr; {example.colaborador?.nome} &rarr; {example.filme_recomendado?.titulo}</p>
-        <p>Esse caminho levou à recomendação: {example.colaborador?.nome} avaliou {example.filme_recomendado?.titulo} com nota {example.nota_colaborador}, similaridade {example.similaridade?.toFixed(3)} e pontuação {example.pontuacao?.toFixed(3)}.</p>
-      </div> : <p>{example?.mensagem || 'Carregando exemplo.'}</p>}
-    </section>
-    <details className="home-charts"><summary>Gráficos</summary><div className="chart-grid">
-      <Bars title="Filmes por gênero" rows={analysis?.filmes_por_genero || []} />
-      <Bars title="Avaliações por usuário" rows={analysis?.avaliacoes_por_usuario || []} />
-      <Bars title="Grau dos usuários" rows={analysis?.grau_usuarios || []} />
-      <Bars title="Grau dos filmes" rows={(analysis?.grau_filmes || []).map(item => ({ nome: item.titulo, valor: item.valor }))} />
-      <Bars title="Similaridade entre usuários" rows={(analysis?.similaridade_usuarios || []).slice(0, 12).map(item => ({ nome: `${item.usuario} / ${item.outro}`, valor: item.similaridade }))} />
-    </div></details>
-  </div>
-}
-
-
+/** Tela de consulta às avaliações, preferências e similaridades de cada usuário. */
 function Usuarios(props: {
   users: User[]
   selectedUser: string
@@ -477,7 +350,7 @@ function Usuarios(props: {
                 >
                   <td>{user.nome}</td>
                   <td>{user.avaliacoes}</td>
-                  <td>{user.generos_preferidos.join(', ') || '?'}</td>
+                  <td>{user.generos_preferidos.join(', ') || 'Nenhum'}</td>
                   <td>{user.grau}</td>
                 </tr>
               ))}
@@ -488,7 +361,7 @@ function Usuarios(props: {
       <section className="panel user-detail">
         {props.preferences && <>
           <h2>{props.preferences.usuario.nome}</h2>
-          <p><b>Preferências:</b> {props.preferences.generos_preferidos.join(', ') || '?'}</p>
+          <p><b>Preferências:</b> {props.preferences.generos_preferidos.join(', ') || 'Nenhuma'}</p>
           <h3>Filmes avaliados</h3>
           <table>
             <thead><tr><th>Filme</th><th>Gênero</th><th>Nota</th></tr></thead>
@@ -515,6 +388,7 @@ function Usuarios(props: {
   )
 }
 
+/** Tela que apresenta o ranking e os caminhos U-F-U-F que explicam cada item. */
 function Recomendacoes(props: {
   users: User[]
   selectedUser: string
@@ -579,7 +453,7 @@ function Recomendacoes(props: {
               <div className="path-row">
                 {path.vertices.map((id, vertexIndex) => (
                   <span className="path-part" key={`${id}-${vertexIndex}`}>
-                    {vertexIndex > 0 && <b>â†’</b>}{props.getName(id)}
+                    {vertexIndex > 0 && <b>→</b>}{props.getName(id)}
                   </span>
                 ))}
               </div>
@@ -625,7 +499,7 @@ function Grafo(props: {
         const collaborator = props.users.find(user => user.id === path.usuario_id)?.nome || path.usuario_id
         const shared = props.movies.find(movie => movie.id === path.filme_compartilhado)?.titulo || path.filme_compartilhado
         return <button key={`${path.usuario_id}-${path.filme_compartilhado}-${index}`} className={selectedPath === index ? 'path-choice selected-path' : 'path-choice'} style={{ '--path-color': PATH_COLORS[index % PATH_COLORS.length] } as React.CSSProperties} onClick={() => setSelectedPath(index)}>
-          <span className="path-swatch" />{collaborator} ? {shared} ? nota {path.nota_colaborador} ? Jaccard {path.similaridade.toFixed(3)}
+          <span className="path-swatch" />{collaborator} · {shared} · nota {path.nota_colaborador} · Jaccard {path.similaridade.toFixed(3)}
         </button>
       })}
     </div>}
@@ -633,6 +507,11 @@ function Grafo(props: {
   </section>
 }
 
+/**
+ * Desenha o grafo em SVG sem biblioteca externa. A vizinhança usa disposição
+ * radial, os caminhos usam as duas partições em colunas e o modo completo usa
+ * uma simulação de forças determinística.
+ */
 function GraphView({ graph, onSelectUser, selectedPath }: { graph: GraphData; onSelectUser?: (id: string) => void; selectedPath: number | null }) {
   const [hoverNode, setHoverNode] = useState<string | null>(null)
   const [screenWidth, setScreenWidth] = useState(() => window.innerWidth)
@@ -800,128 +679,136 @@ function GraphView({ graph, onSelectUser, selectedPath }: { graph: GraphData; on
   </svg>
 }
 
+/** Tela de simulação: adiciona arestas somente na cópia em memória do backend. */
 function Simulacao(props: {
-  users: User[]
   movies: Movie[]
-  simUser: string
-  setSimUser: (id: string) => void
-  simPreferences: Preferences | null
+  simName: string
+  setSimName: (name: string) => void
+  simulation: SimulationState | null
   simMovie: string
   setSimMovie: (id: string) => void
   simRating: number
   setSimRating: (value: number) => void
-  simChanges: SimulationChange[]
-  comparison: Comparison | null
+  selectedRecommendation: Recommendation | null
+  setSelectedRecommendation: (item: Recommendation | null) => void
   graph: GraphData | null
   graphMode: string
   setGraphMode: (mode: string) => void
   getName: (id: string) => string
-  prepareExample: () => void
+  start: () => void
   apply: () => void
   restore: () => void
 }) {
-  const rated = new Set(props.simPreferences?.avaliacoes.map(item => item.filme_id) || [])
+  const active = Boolean(props.simulation?.ativo && props.simulation.usuario)
+  const rated = new Set(props.simulation?.avaliacoes.map(item => item.filme_id) || [])
   const availableMovies = props.movies.filter(movie => !rated.has(movie.id))
-  const beforeIds = new Set(props.comparison?.antes.map(item => item.filme_id) || [])
-  const afterIds = new Set(props.comparison?.depois.map(item => item.filme_id) || [])
-  const removed = props.comparison?.antes.filter(item => !afterIds.has(item.filme_id)) || []
-  const added = props.comparison?.depois.filter(item => !beforeIds.has(item.filme_id)) || []
 
   return <>
-    <div className="steps">
-      <section className="panel">
-        <h2>1. Escolher pessoa</h2>
-        <label>Pessoa
-          <select value={props.simUser} onChange={event => props.setSimUser(event.target.value)}>
-            {props.users.map(user => <option key={user.id} value={user.id}>{user.nome}</option>)}
-          </select>
-        </label>
-        <button className="button" onClick={props.prepareExample}>Exemplo</button>
+    <div className="simulation-layout">
+      <section className="panel simulation-profile">
+        <div className="section-title">
+          <div><h2>Perfil e avaliações</h2><p>Cadastre uma pessoa temporária e registre suas notas.</p></div>
+          {active && <button className="button" onClick={props.restore}>Restaurar</button>}
+        </div>
+
+        {!active ? <div className="simulation-start">
+          <label>Nome da nova pessoa
+            <input
+              className="search"
+              value={props.simName}
+              maxLength={80}
+              placeholder="Ex.: Gabriel Oliveira"
+              onChange={event => props.setSimName(event.target.value)}
+              onKeyDown={event => { if (event.key === 'Enter') props.start() }}
+            />
+          </label>
+          <button className="button primary" disabled={props.simName.trim().length < 2} onClick={props.start}>Iniciar simulação</button>
+        </div> : <>
+          <dl className="simulation-summary">
+            <div><dt>Nome</dt><dd>{props.simulation?.usuario?.nome}</dd></div>
+            <div><dt>Avaliações</dt><dd>{props.simulation?.usuario?.avaliacoes}</dd></div>
+            <div><dt>Positivas</dt><dd>{props.simulation?.usuario?.filmes_positivos}</dd></div>
+          </dl>
+
+          <div className="simulation-form">
+            <label>Filme ainda não avaliado
+              <select value={props.simMovie} onChange={event => props.setSimMovie(event.target.value)}>
+                {availableMovies.map(movie => <option key={movie.id} value={movie.id}>{movie.titulo}</option>)}
+              </select>
+            </label>
+            <label>Nota
+              <select value={props.simRating} onChange={event => props.setSimRating(Number(event.target.value))}>
+                {[1, 2, 3, 4, 5].map(value => <option key={value} value={value}>{value}</option>)}
+              </select>
+            </label>
+            <button className="button primary" disabled={!props.simMovie} onClick={props.apply}>Registrar avaliação</button>
+          </div>
+
+          <div className="simulation-history">
+            <h3>Histórico</h3>
+            {props.simulation?.avaliacoes.length ? <table>
+              <thead><tr><th>Filme</th><th>Gênero</th><th>Nota</th><th>Uso</th></tr></thead>
+              <tbody>{props.simulation.avaliacoes.map(item => (
+                <tr key={item.filme_id}>
+                  <td>{item.titulo}</td><td>{item.genero}</td><td>{item.nota}</td>
+                  <td className={item.nota >= 4 ? 'positive-note' : 'neutral-note'}>{item.nota >= 4 ? 'Preferência positiva' : 'Apenas registrada'}</td>
+                </tr>
+              ))}</tbody>
+            </table> : <p className="muted">Nenhuma avaliação registrada.</p>}
+          </div>
+        </>}
       </section>
-      <section className="panel">
-        <h2>2. Avaliar filme</h2>
-        <label>Filme ainda não avaliado
-          <select value={props.simMovie} onChange={event => props.setSimMovie(event.target.value)}>
-            {availableMovies.map(movie => <option key={movie.id} value={movie.id}>{movie.titulo}</option>)}
-          </select>
-        </label>
-        <label>Nota
-          <select value={props.simRating} onChange={event => props.setSimRating(Number(event.target.value))}>
-            {[1, 2, 3, 4, 5].map(value => <option key={value} value={value}>{value}</option>)}
-          </select>
-        </label>
-        <button className="button primary" disabled={!props.simMovie} onClick={props.apply}>Aplicar</button>
-      </section>
-      <section className="panel">
-        <h2>3. Ver resultado</h2>
-        <p>Você adicionou uma avaliação. Veja como as conexões e recomendações mudaram.</p>
-        <button className="button" onClick={props.restore}>Restaurar</button>
+
+      <section className="panel simulation-results">
+        <h2>Resultados</h2>
+        {!active ? <p className="muted">Inicie uma nova pessoa para calcular similaridades e recomendações.</p> : <>
+          <h3>Usuários semelhantes</h3>
+          {props.simulation?.similares.length ? <table>
+            <thead><tr><th>Usuário</th><th>Jaccard</th><th>Filmes positivos em comum</th></tr></thead>
+            <tbody>{props.simulation.similares.map(user => (
+              <tr key={user.id}><td>{user.nome}</td><td>{user.similaridade.toFixed(3)}</td><td>{user.filmes_em_comum.map(props.getName).join(', ')}</td></tr>
+            ))}</tbody>
+          </table> : <p className="muted">Ainda não há interesses positivos em comum. Registre notas 4 ou 5 para criar conexões.</p>}
+
+          <h3>Recomendações</h3>
+          {props.simulation?.recomendacoes.length ? <table>
+            <thead><tr><th>Filme</th><th>Pontuação</th><th>Colaboradores</th><th>Caminho</th></tr></thead>
+            <tbody>{props.simulation.recomendacoes.slice(0, 10).map(item => (
+              <tr key={item.filme_id} className={props.selectedRecommendation?.filme_id === item.filme_id ? 'selected-row' : ''}>
+                <td>{item.titulo}</td><td>{item.pontuacao.toFixed(3)}</td><td>{item.colaboradores}</td>
+                <td><button className="link-button" onClick={() => { props.setSelectedRecommendation(item); props.setGraphMode('caminho') }}>Ver caminho</button></td>
+              </tr>
+            ))}</tbody>
+          </table> : <p className="muted">Não há conexões positivas suficientes para recomendar filmes neste momento.</p>}
+
+          {props.selectedRecommendation && <div className="simulation-paths">
+            <h3>Caminhos para {props.selectedRecommendation.titulo}</h3>
+            {props.selectedRecommendation.caminhos.map((path, index) => (
+              <p key={`${path.usuario_id}-${path.filme_compartilhado}-${index}`}>
+                {path.vertices.map(props.getName).join(' → ')} · Jaccard {path.similaridade.toFixed(3)} · nota {path.nota_colaborador}
+              </p>
+            ))}
+          </div>}
+        </>}
       </section>
     </div>
-
-    {props.simChanges.length > 0 && <section className="panel">
-      <h2>Avaliações adicionadas</h2>
-      <table>
-        <thead><tr><th>Pessoa</th><th>Filme</th><th>Nota</th></tr></thead>
-        <tbody>{props.simChanges.map((change, index) => (
-          <tr key={`${change.usuario_nome}-${change.filme_titulo}-${index}`}>
-            <td>{change.usuario_nome}</td><td>{change.filme_titulo}</td><td>{change.nota_nova}</td>
-          </tr>
-        ))}</tbody>
-      </table>
-    </section>}
-
-    {props.comparison && <section className="panel">
-      <h2>Recomendações antes e depois</h2>
-      <p className="difference">
-        Saíram: {removed.map(item => item.titulo).join(', ') || 'nenhum filme'}.
-        {' '}Entraram: {added.map(item => item.titulo).join(', ') || 'nenhum filme'}.
-      </p>
-      <div className="comparison">
-        <div><h3>Antes</h3><RecommendationList items={props.comparison.antes} /></div>
-        <div><h3>Depois</h3><RecommendationList items={props.comparison.depois} /></div>
-      </div>
-    </section>}
 
     <section className="panel">
       <div className="graph-controls">
         <h2>Grafo atualizado</h2>
         <label>Conexões
-          <select value={props.graphMode} onChange={event => props.setGraphMode(event.target.value)}>
+          <select disabled={!active} value={props.graphMode} onChange={event => props.setGraphMode(event.target.value)}>
             <option value="vizinhos">Vizinhança</option>
             <option value="positivas">Avaliações positivas</option>
-            <option value="todos">Todas</option>
+            {props.selectedRecommendation && <option value="caminho">Caminho selecionado</option>}
           </select>
         </label>
       </div>
-      {props.graph && <GraphView graph={props.graph} selectedPath={null} />}
+      {!active && <p className="muted">O grafo aparecerá após iniciar a simulação.</p>}
+      {active && props.graph && <GraphView graph={props.graph} selectedPath={null} />}
       <div className="legend"><span><i className="simulated-color" />Nova avaliação simulada</span></div>
     </section>
   </>
-}
-
-function RecommendationList({ items }: { items: Recommendation[] }) {
-  if (!items.length) return <p className="muted">Sem recomendações por conexões positivas.</p>
-  return <table>
-    <thead><tr><th>Filme</th><th>Pontuação</th></tr></thead>
-    <tbody>{items.slice(0, 8).map(item => (
-      <tr key={item.filme_id}><td>{item.titulo}</td><td>{item.pontuacao.toFixed(2)}</td></tr>
-    ))}</tbody>
-  </table>
-}
-
-function Bars({ title, rows }: { title: string; rows: { nome: string; valor: number }[] }) {
-  const max = Math.max(1, ...rows.map(row => row.valor))
-  return <section className="chart">
-    <h3>{title}</h3>
-    {rows.map((row, index) => (
-      <div className="bar-row" key={`${row.nome}-${index}`}>
-        <span title={row.nome}>{row.nome}</span>
-        <div><i style={{ width: `${Math.max(2, row.valor / max * 100)}%` }} /></div>
-        <b>{Number.isInteger(row.valor) ? row.valor : row.valor.toFixed(2)}</b>
-      </div>
-    ))}
-  </section>
 }
 
 export default App

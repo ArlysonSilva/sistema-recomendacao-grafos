@@ -1,8 +1,14 @@
-"""Grafo bipartido usuario-item com lista de adjacencia (implementado do zero)."""
+"""Implementação acadêmica original do grafo usado pela interface de linha de comando."""
 from collections import deque
 
 
 class GrafoBipartido:
+    """Grafo usuário-item com notas nas arestas e gêneros nos itens.
+
+    Esta classe sustenta os experimentos e gráficos históricos de ``main.py``.
+    A API web usa a representação equivalente ``GrafoFilmes``.
+    """
+
     def __init__(self):
         self.adj = {}      # vertice -> {vizinho: nota}
         self.tipo = {}     # vertice -> 'U' (usuario) ou 'I' (item)
@@ -10,6 +16,7 @@ class GrafoBipartido:
 
     # ---------- construcao ----------
     def add_aresta(self, usuario, item, nota=1):
+        """Inclui uma avaliação nos dois sentidos da lista de adjacência."""
         for v, t in ((usuario, "U"), (item, "I")):
             if v not in self.adj:
                 self.adj[v] = {}
@@ -40,7 +47,7 @@ class GrafoBipartido:
         return set(self.adj[v])
 
     def vizinhanca_2(self, u):
-        """Usuarios a distancia 2 de u (compartilham ao menos 1 item)."""
+        """Retorna usuários a distância 2, que compartilham ao menos um item."""
         res = set()
         for i in self.adj[u]:
             res |= self.adj[i].keys()
@@ -48,13 +55,14 @@ class GrafoBipartido:
         return res
 
     def jaccard(self, u1, u2):
+        """Mede a razão entre interseção e união dos itens dos usuários."""
         a, b = self.vizinhos(u1), self.vizinhos(u2)
         uniao = a | b
         return len(a & b) / len(uniao) if uniao else 0.0
 
     # ---------- BFS, caminhos, conectividade ----------
     def bfs(self, origem, limite=None):
-        """Retorna (dist, pai). Se 'limite' for dado, nao expande alem dele."""
+        """Retorna distâncias e predecessores, respeitando o limite opcional."""
         dist, pai = {origem: 0}, {origem: None}
         fila = deque([origem])
         while fila:
@@ -79,6 +87,7 @@ class GrafoBipartido:
         return caminho[::-1]
 
     def componentes_conexas(self):
+        """Encontra componentes repetindo a BFS a partir de vértices não visitados."""
         visitado, comps = set(), []
         for v in self.adj:
             if v not in visitado:
@@ -88,7 +97,7 @@ class GrafoBipartido:
         return sorted(comps, key=len, reverse=True)
 
     def eh_bipartido(self):
-        """Verifica por 2-coloracao com BFS (todas as arestas ligam U a I)."""
+        """Verifica por 2-coloração com BFS se não há arestas na mesma partição."""
         cor = {}
         for s in self.adj:
             if s in cor:

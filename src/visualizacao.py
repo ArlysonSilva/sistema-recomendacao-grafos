@@ -1,7 +1,8 @@
-"""Visualizacoes do grafo bipartido (requer networkx e matplotlib).
- 1) layout_ponderado : forca de atracao proporcional a nota -> notas altas aproximam
- 2) layout_genero    : filmes agrupados por genero; usuarios no centroide das suas notas
- 3) ranking          : barras com o ranking bayesiano, colorido por genero"""
+"""Gera imagens estáticas da análise histórica com NetworkX e Matplotlib.
+
+Essas imagens são opcionais e independentes da visualização SVG do frontend.
+Incluem layout ponderado, agrupamento por gênero e ranking bayesiano.
+"""
 import math
 from pathlib import Path
 import networkx as nx

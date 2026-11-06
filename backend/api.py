@@ -1,4 +1,8 @@
-"""API do CineConecta. A simulação fica somente na memória do processo."""
+"""API HTTP do CineConecta.
+
+Os endpoints convertem o grafo em dados adequados às cinco telas do frontend.
+A simulação usa uma cópia em memória e nunca grava os arquivos CSV.
+"""
 from collections import Counter
 from copy import deepcopy
 
@@ -19,24 +23,37 @@ app.add_middleware(
 grafo_original, usuarios, filmes = carregar()
 grafo_simulacao = deepcopy(grafo_original)
 alteracoes = []
+usuario_simulado = None
 
 
 class AvaliacaoSimulada(BaseModel):
+    """Dados necessários para adicionar temporariamente uma avaliação."""
+
     usuario_id: str
     filme_id: str
     nota: int = Field(ge=1, le=5)
 
 
 class UsuarioSelecionado(BaseModel):
+    """Usuário para quem a simulação recalcula recomendações."""
+
     usuario_id: str
 
 
+class NovoUsuarioSimulado(BaseModel):
+    """Nome da pessoa criada somente durante a simulação."""
+
+    nome: str = Field(min_length=2, max_length=80)
+
+
 def validar_usuario(usuario_id: str) -> None:
+    """Interrompe a requisição quando o ID de usuário não existe."""
     if usuario_id not in usuarios:
         raise HTTPException(status_code=404, detail="Usuário não encontrado.")
 
 
 def generos_preferidos(grafo, usuario_id: str) -> list[str]:
+    """Ordena gêneros pela quantidade de avaliações positivas do usuário."""
     contagem = Counter(
         filmes[filme_id]["genero"]
         for filme_id, nota in grafo.adj[usuario_id].items()
@@ -46,6 +63,7 @@ def generos_preferidos(grafo, usuario_id: str) -> list[str]:
 
 
 def lista_usuarios(grafo):
+    """Serializa os usuários e seus valores derivados no grafo informado."""
     return [
         {
             "id": usuario_id,
@@ -58,21 +76,30 @@ def lista_usuarios(grafo):
     ]
 
 
+def usuarios_da_simulacao() -> dict:
+    """Combina usuários originais com o único perfil temporário ativo."""
+    resultado = dict(usuarios)
+    if usuario_simulado:
+        resultado[usuario_simulado["id"]] = usuario_simulado
+    return resultado
+
+
 @app.get("/api/estatisticas")
 def estatisticas():
-    componentes = grafo_simulacao.componentes()
+    """Retorna os totais reais exibidos no cabeçalho da página inicial."""
+    componentes = grafo_original.componentes()
     return {
         "usuarios": len(usuarios),
         "filmes": len(filmes),
-        "avaliacoes": sum(grafo_simulacao.grau(uid) for uid in usuarios),
+        "avaliacoes": sum(grafo_original.grau(uid) for uid in usuarios),
         "componentes_conexas": len(componentes),
-        "bipartido": grafo_simulacao.eh_bipartido(),
+        "bipartido": grafo_original.eh_bipartido(),
     }
 
 
 @app.get("/api/usuarios")
 def obter_usuarios():
-    return lista_usuarios(grafo_simulacao)
+    return lista_usuarios(grafo_original)
 
 
 @app.get("/api/filmes")
@@ -82,8 +109,8 @@ def obter_filmes():
             "id": filme_id,
             "titulo": filme["titulo"],
             "genero": filme["genero"],
-            "avaliacoes": grafo_simulacao.grau(filme_id),
-            "grau": grafo_simulacao.grau(filme_id),
+            "avaliacoes": grafo_original.grau(filme_id),
+            "grau": grafo_original.grau(filme_id),
         }
         for filme_id, filme in filmes.items()
     ]
@@ -91,6 +118,7 @@ def obter_filmes():
 
 @app.get("/api/usuarios/{usuario_id}/preferencias")
 def obter_preferencias(usuario_id: str):
+    """Detalha avaliações, grau e preferências positivas de um usuário."""
     validar_usuario(usuario_id)
     avaliacoes = [
         {
@@ -99,23 +127,23 @@ def obter_preferencias(usuario_id: str):
             "genero": filmes[filme_id]["genero"],
             "nota": nota,
         }
-        for filme_id, nota in grafo_simulacao.adj[usuario_id].items()
+        for filme_id, nota in grafo_original.adj[usuario_id].items()
     ]
     usuario = {**usuarios[usuario_id]}
-    usuario["generos_preferidos"] = generos_preferidos(grafo_simulacao, usuario_id)
+    usuario["generos_preferidos"] = generos_preferidos(grafo_original, usuario_id)
     return {
         "usuario": usuario,
         "avaliacoes": sorted(avaliacoes, key=lambda item: item["titulo"]),
         "generos_preferidos": usuario["generos_preferidos"],
-        "grau": grafo_simulacao.grau(usuario_id),
-        "filmes_positivos": len(grafo_simulacao.positivos(usuario_id)),
+        "grau": grafo_original.grau(usuario_id),
+        "filmes_positivos": len(grafo_original.positivos(usuario_id)),
     }
 
 
 @app.get("/api/usuarios/{usuario_id}/similares")
 def obter_similares(usuario_id: str):
     validar_usuario(usuario_id)
-    return similares(grafo_simulacao, usuarios, usuario_id)
+    return similares(grafo_original, usuarios, usuario_id)
 
 
 @app.get("/api/recomendacoes/{usuario_id}")
@@ -123,11 +151,12 @@ def obter_recomendacoes(
     usuario_id: str,
     quantidade: int = Query(default=20, ge=1, le=60),
 ):
+    """Gera o ranking de filmes e os caminhos que justificam cada item."""
     validar_usuario(usuario_id)
     return {
         "usuario_id": usuario_id,
         "recomendacoes": recomendacoes(
-            grafo_simulacao, usuarios, filmes, usuario_id, quantidade
+            grafo_original, usuarios, filmes, usuario_id, quantidade
         ),
     }
 
@@ -141,17 +170,26 @@ def obter_grafo(
         pattern="^(todas|vizinhos|expandida|positivas|caminho)$",
     ),
 ):
-    if usuario:
+    """Monta recortes do grafo para a visualização SVG do frontend.
+
+    Os modos retornam o grafo completo, a vizinhança direta, somente arestas
+    positivas, uma expansão resumida ou os caminhos de uma recomendação.
+    """
+    simulacao_ativa = bool(
+        usuario_simulado and usuario == usuario_simulado["id"]
+    )
+    if usuario and not simulacao_ativa:
         validar_usuario(usuario)
 
-    grafo = grafo_simulacao
+    grafo = grafo_simulacao if simulacao_ativa else grafo_original
+    usuarios_grafo = usuarios_da_simulacao() if simulacao_ativa else usuarios
     caminhos = []
     mensagem = ""
     recomendacoes_usuario = []
 
     if usuario and modo in {"expandida", "caminho"}:
         recomendacoes_usuario = recomendacoes(
-            grafo, usuarios, filmes, usuario, quantidade=len(filmes)
+            grafo, usuarios_grafo, filmes, usuario, quantidade=len(filmes)
         )
 
     if modo == "todas":
@@ -161,7 +199,9 @@ def obter_grafo(
     elif modo == "positivas":
         vertices = set(grafo.adj)
     elif modo == "expandida":
-        usuarios_semelhantes = similares(grafo, usuarios, usuario, limite=len(usuarios))[:5] if usuario else []
+        usuarios_semelhantes = similares(
+            grafo, usuarios_grafo, usuario, limite=len(usuarios_grafo)
+        )[:5] if usuario else []
         ids_semelhantes = {item["id"] for item in usuarios_semelhantes}
         recomendacoes_validas = [
             item for item in recomendacoes_usuario
@@ -224,7 +264,11 @@ def obter_grafo(
     for indice, caminho in enumerate(caminhos):
         rota = caminho["vertices"]
         for origem, destino in zip(rota, rota[1:]):
-            par = (origem, destino) if origem in usuarios else (destino, origem)
+            par = (
+                (origem, destino)
+                if origem in usuarios_grafo
+                else (destino, origem)
+            )
             pares_caminho.add(par)
             rotas_por_aresta.setdefault(par, []).append(indice)
         papeis[rota[1]] = "compartilhado"
@@ -238,7 +282,7 @@ def obter_grafo(
     nos = [
         {
             "id": vertice,
-            "nome": usuarios[vertice]["nome"] if tipo == "usuario" else filmes[vertice]["titulo"],
+            "nome": usuarios_grafo[vertice]["nome"] if tipo == "usuario" else filmes[vertice]["titulo"],
             "tipo": tipo,
             "grau": grafo.grau(vertice),
             "papel": papeis.get(vertice, "normal"),
@@ -248,7 +292,7 @@ def obter_grafo(
         if vertice in vertices
     ]
     arestas = []
-    for usuario_id in usuarios:
+    for usuario_id in usuarios_grafo:
         for filme_id, nota in grafo.adj[usuario_id].items():
             if usuario_id not in vertices or filme_id not in vertices:
                 continue
@@ -283,38 +327,104 @@ def obter_grafo(
     }
 
 
+def serializar_exemplo(item: dict, caminho: dict) -> dict:
+    """Converte uma recomendação e um de seus caminhos para a tela inicial."""
+    inicio, compartilhado, colaborador, candidato = caminho["vertices"]
+    positivos_inicio = grafo_original.positivos(inicio)
+    positivos_colaborador = grafo_original.positivos(colaborador)
+    return {
+        "disponivel": True,
+        "usuario": {"id": inicio, "nome": usuarios[inicio]["nome"]},
+        "filme_compartilhado": {
+            "id": compartilhado,
+            "titulo": filmes[compartilhado]["titulo"],
+        },
+        "colaborador": {
+            "id": colaborador,
+            "nome": usuarios[colaborador]["nome"],
+        },
+        "filme_recomendado": {
+            "id": candidato,
+            "titulo": filmes[candidato]["titulo"],
+        },
+        "nota_usuario": grafo_original.adj[inicio][compartilhado],
+        "nota_compartilhada": grafo_original.adj[colaborador][compartilhado],
+        "nota_colaborador": caminho["nota_colaborador"],
+        "positivos_em_comum": len(positivos_inicio & positivos_colaborador),
+        "positivos_uniao": len(positivos_inicio | positivos_colaborador),
+        "similaridade": caminho["similaridade"],
+        "pontuacao": item["pontuacao"],
+    }
+
+
 @app.get("/api/exemplo")
 def obter_exemplo():
-    ordem = list(usuarios)
-    mariana = next((uid for uid in ordem if usuarios[uid]["nome"] == "Mariana Costa"), None)
-    if mariana:
-        ordem.remove(mariana)
-        ordem.insert(0, mariana)
+    """Seleciona um caminho real e completo para a explicação da página inicial.
 
-    for usuario_id in ordem:
+    O exemplo conhecido da apresentação é preferido enquanto continuar válido
+    na base ou na simulação. Se os dados mudarem, o primeiro caminho disponível
+    mantém a seção funcional sem depender de IDs fixos.
+    """
+    nomes_preferidos = (
+        "Mariana Costa",
+        "Indiana Jones e os Caçadores da Arca Perdida",
+        "Luiza Correia",
+        "Seven",
+    )
+    inicio_preferido = next(
+        (uid for uid, usuario in usuarios.items() if usuario["nome"] == nomes_preferidos[0]),
+        None,
+    )
+    compartilhado_preferido = next(
+        (fid for fid, filme in filmes.items() if filme["titulo"] == nomes_preferidos[1]),
+        None,
+    )
+    colaborador_preferido = next(
+        (uid for uid, usuario in usuarios.items() if usuario["nome"] == nomes_preferidos[2]),
+        None,
+    )
+    candidato_preferido = next(
+        (fid for fid, filme in filmes.items() if filme["titulo"] == nomes_preferidos[3]),
+        None,
+    )
+    caminho_preferido = [
+        inicio_preferido,
+        compartilhado_preferido,
+        colaborador_preferido,
+        candidato_preferido,
+    ]
+
+    if all(caminho_preferido):
         itens = recomendacoes(
-            grafo_simulacao, usuarios, filmes, usuario_id, quantidade=len(filmes)
+            grafo_original,
+            usuarios,
+            filmes,
+            inicio_preferido,
+            quantidade=len(filmes),
+        )
+        item = next(
+            (item for item in itens if item["filme_id"] == candidato_preferido),
+            None,
+        )
+        if item:
+            caminho = next(
+                (
+                    caminho
+                    for caminho in item["caminhos"]
+                    if caminho["vertices"] == caminho_preferido
+                ),
+                None,
+            )
+            if caminho:
+                return serializar_exemplo(item, caminho)
+
+    for usuario_id in usuarios:
+        itens = recomendacoes(
+            grafo_original, usuarios, filmes, usuario_id, quantidade=len(filmes)
         )
         for item in itens:
-            if not item["caminhos"]:
-                continue
-            caminho = item["caminhos"][0]
-            inicio, compartilhado, colaborador, candidato = caminho["vertices"]
-            return {
-                "disponivel": True,
-                "usuario": {"id": inicio, "nome": usuarios[inicio]["nome"]},
-                "filme_compartilhado": {
-                    "id": compartilhado,
-                    "titulo": filmes[compartilhado]["titulo"],
-                },
-                "colaborador": {"id": colaborador, "nome": usuarios[colaborador]["nome"]},
-                "filme_recomendado": {"id": candidato, "titulo": filmes[candidato]["titulo"]},
-                "nota_usuario": grafo_simulacao.adj[inicio][compartilhado],
-                "nota_compartilhada": grafo_simulacao.adj[colaborador][compartilhado],
-                "nota_colaborador": caminho["nota_colaborador"],
-                "similaridade": caminho["similaridade"],
-                "pontuacao": item["pontuacao"],
-            }
+            if item["caminhos"]:
+                return serializar_exemplo(item, item["caminhos"][0])
     return {
         "disponivel": False,
         "mensagem": "Não há caminhos positivos para formar um exemplo nesta base.",
@@ -323,7 +433,8 @@ def obter_exemplo():
 
 @app.get("/api/analise")
 def obter_analise():
-    grafo = grafo_simulacao
+    """Calcula distribuições descritivas usadas nos gráficos recolhidos."""
+    grafo = grafo_original
     filmes_por_genero = Counter(filme["genero"] for filme in filmes.values())
     por_genero = Counter()
     por_filme = Counter()
@@ -376,10 +487,85 @@ def obter_analise():
     }
 
 
+def montar_estado_simulacao() -> dict:
+    """Reúne perfil, avaliações e resultados atuais do usuário temporário."""
+    if not usuario_simulado:
+        return {
+            "ativo": False,
+            "usuario": None,
+            "avaliacoes": [],
+            "similares": [],
+            "recomendacoes": [],
+        }
+
+    usuario_id = usuario_simulado["id"]
+    usuarios_ativos = usuarios_da_simulacao()
+    avaliacoes = [
+        {
+            "filme_id": filme_id,
+            "titulo": filmes[filme_id]["titulo"],
+            "genero": filmes[filme_id]["genero"],
+            "nota": nota,
+        }
+        for filme_id, nota in grafo_simulacao.adj[usuario_id].items()
+    ]
+    return {
+        "ativo": True,
+        "usuario": {
+            "id": usuario_id,
+            "nome": usuario_simulado["nome"],
+            "avaliacoes": len(avaliacoes),
+            "filmes_positivos": len(grafo_simulacao.positivos(usuario_id)),
+        },
+        "avaliacoes": sorted(avaliacoes, key=lambda item: item["titulo"]),
+        "similares": similares(
+            grafo_simulacao, usuarios_ativos, usuario_id, limite=8
+        ),
+        "recomendacoes": recomendacoes(
+            grafo_simulacao,
+            usuarios_ativos,
+            filmes,
+            usuario_id,
+            quantidade=20,
+        ),
+    }
+
+
+@app.get("/api/simulacao")
+def obter_estado_simulacao():
+    """Retorna a simulação ativa para permitir recarregar o frontend."""
+    return montar_estado_simulacao()
+
+
+@app.post("/api/simulacao/usuario")
+def iniciar_simulacao(pedido: NovoUsuarioSimulado):
+    """Cria uma pessoa somente na cópia em memória do grafo."""
+    global grafo_simulacao, usuario_simulado
+    nome = pedido.nome.strip()
+    if len(nome) < 2:
+        raise HTTPException(status_code=422, detail="Informe um nome válido.")
+    if any(usuario["nome"].casefold() == nome.casefold() for usuario in usuarios.values()):
+        raise HTTPException(
+            status_code=409,
+            detail="Já existe uma pessoa com esse nome na base original.",
+        )
+
+    grafo_simulacao = deepcopy(grafo_original)
+    alteracoes.clear()
+    usuario_simulado = {
+        "id": "usuario-simulado",
+        "nome": nome,
+        "generos_preferidos": [],
+    }
+    grafo_simulacao.add_vertice(usuario_simulado["id"], "usuario")
+    return montar_estado_simulacao()
+
+
 @app.post("/api/simulacao/avaliacao")
 def simular_avaliacao(pedido: AvaliacaoSimulada):
-    if pedido.usuario_id not in usuarios:
-        raise HTTPException(status_code=404, detail="Usuário não encontrado.")
+    """Registra uma avaliação do usuário temporário e recalcula os resultados."""
+    if not usuario_simulado or pedido.usuario_id != usuario_simulado["id"]:
+        raise HTTPException(status_code=404, detail="Inicie uma nova pessoa primeiro.")
     if pedido.filme_id not in filmes:
         raise HTTPException(status_code=404, detail="Filme não encontrado.")
     if pedido.filme_id in grafo_simulacao.adj[pedido.usuario_id]:
@@ -391,40 +577,34 @@ def simular_avaliacao(pedido: AvaliacaoSimulada):
     grafo_simulacao.add_avaliacao(pedido.usuario_id, pedido.filme_id, pedido.nota)
     alteracao = {
         "usuario_id": pedido.usuario_id,
-        "usuario_nome": usuarios[pedido.usuario_id]["nome"],
+        "usuario_nome": usuario_simulado["nome"],
         "filme_id": pedido.filme_id,
         "filme_titulo": filmes[pedido.filme_id]["titulo"],
         "nota_nova": pedido.nota,
         "tipo": "adicionada",
     }
     alteracoes.append(alteracao)
-    return {
-        "alteracao": alteracao,
-        "alteracoes": alteracoes,
-        "recomendacoes": recomendacoes(
-            grafo_simulacao, usuarios, filmes, pedido.usuario_id
-        ),
-    }
+    return montar_estado_simulacao()
 
 
 @app.post("/api/simulacao/recomendar")
 def comparar_simulacao(pedido: UsuarioSelecionado):
-    validar_usuario(pedido.usuario_id)
+    """Mantém compatibilidade retornando os resultados atuais da nova pessoa."""
+    if not usuario_simulado or pedido.usuario_id != usuario_simulado["id"]:
+        raise HTTPException(status_code=404, detail="Simulação não encontrada.")
     return {
         "usuario_id": pedido.usuario_id,
-        "antes": recomendacoes(
-            grafo_original, usuarios, filmes, pedido.usuario_id
-        ),
-        "depois": recomendacoes(
-            grafo_simulacao, usuarios, filmes, pedido.usuario_id
-        ),
+        "antes": [],
+        "depois": montar_estado_simulacao()["recomendacoes"],
         "alteracoes": alteracoes,
     }
 
 
 @app.post("/api/simulacao/restaurar")
 def restaurar_simulacao():
-    global grafo_simulacao
+    """Descarta todas as avaliações temporárias e restaura a cópia original."""
+    global grafo_simulacao, usuario_simulado
     grafo_simulacao = deepcopy(grafo_original)
+    usuario_simulado = None
     alteracoes.clear()
     return {"restaurado": True}

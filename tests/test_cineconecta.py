@@ -128,6 +128,19 @@ def test_modos_da_api_do_grafo_retorna_recortes_reais():
         for start, end in zip(route["vertices"], route["vertices"][1:])
     }
     assert example["disponivel"]
+    assert example["usuario"]["nome"] == "Mariana Costa"
+    assert example["filme_compartilhado"]["titulo"] == (
+        "Indiana Jones e os Caçadores da Arca Perdida"
+    )
+    assert example["colaborador"]["nome"] == "Luiza Correia"
+    assert example["filme_recomendado"]["titulo"] == "Seven"
+    assert (
+        example["nota_usuario"],
+        example["nota_compartilhada"],
+        example["nota_colaborador"],
+    ) == (5, 4, 5)
+    assert example["positivos_em_comum"] == 1
+    assert example["positivos_uniao"] == 18
     assert example["similaridade"] == pytest.approx(
         api.grafo_original.jaccard(example["usuario"]["id"], example["colaborador"]["id"])
     )
@@ -153,31 +166,77 @@ def test_csv_nova_base_integridade_e_seed():
 def test_endpoints_simulacao_nao_altera_csv():
     import backend.api as api
     originals = {p: hashlib.sha256(p.read_bytes()).hexdigest() for p in DATA.glob("*.csv")}
-    before = api.grafo_simulacao
     api.grafo_simulacao = deepcopy(api.grafo_original)
+    api.usuario_simulado = None
+    api.alteracoes.clear()
+
     async def calls():
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=api.app), base_url="http://test") as client:
+            created = await client.post(
+                "/api/simulacao/usuario", json={"nome": "Gabriel Oliveira"}
+            )
+            first = await client.post(
+                "/api/simulacao/avaliacao",
+                json={"usuario_id": "usuario-simulado", "filme_id": "f005", "nota": 5},
+            )
+            graph = await client.get(
+                "/api/grafo?usuario=usuario-simulado&modo=vizinhos"
+            )
+            duplicate = await client.post(
+                "/api/simulacao/avaliacao",
+                json={"usuario_id": "usuario-simulado", "filme_id": "f005", "nota": 5},
+            )
+            second = await client.post(
+                "/api/simulacao/avaliacao",
+                json={"usuario_id": "usuario-simulado", "filme_id": "f037", "nota": 5},
+            )
+            third = await client.post(
+                "/api/simulacao/avaliacao",
+                json={"usuario_id": "usuario-simulado", "filme_id": "f060", "nota": 3},
+            )
             stats = await client.get("/api/estatisticas")
-            graph = await client.get("/api/grafo?usuario=u001&modo=todas")
-            result = await client.post("/api/simulacao/avaliacao", json={"usuario_id": "u001", "filme_id": "f026", "nota": 4})
-            changed_graph = await client.get("/api/grafo?usuario=u001&modo=vizinhos")
-            duplicate = await client.post("/api/simulacao/avaliacao", json={"usuario_id": "u001", "filme_id": "f026", "nota": 4})
-            after = await client.post("/api/simulacao/recomendar", json={"usuario_id": "u001"})
+            users = await client.get("/api/usuarios")
+            original_graph = await client.get("/api/grafo?usuario=u001&modo=todas")
+            bad = await client.post(
+                "/api/simulacao/avaliacao",
+                json={"usuario_id": "usuario-simulado", "filme_id": "f059", "nota": 9},
+            )
             restored = await client.post("/api/simulacao/restaurar")
-            bad = await client.post("/api/simulacao/avaliacao", json={"usuario_id": "u001", "filme_id": "f060", "nota": 9})
-            return stats, graph, result, changed_graph, duplicate, after, restored, bad
-    stats, graph, result, changed_graph, duplicate, after, restored, bad = asyncio.run(calls())
-    assert stats.json()["usuarios"] == 40
-    assert len(graph.json()["nodes"]) == 100
-    assert len(graph.json()["edges"]) == 560
-    assert any(edge["simulada"] and edge["target"] == "f026" for edge in changed_graph.json()["edges"])
-    assert result.status_code == after.status_code == restored.status_code == 200
+            empty = await client.get("/api/simulacao")
+            return created, first, graph, duplicate, second, third, stats, users, original_graph, bad, restored, empty
+
+    responses = asyncio.run(calls())
+    created, first, graph, duplicate, second, third, stats, users, original_graph, bad, restored, empty = responses
+    assert created.status_code == first.status_code == second.status_code == 200
+    assert created.json()["usuario"]["nome"] == "Gabriel Oliveira"
+    assert created.json()["usuario"]["avaliacoes"] == 0
+    assert first.json()["usuario"]["filmes_positivos"] == 1
+    assert first.json()["similares"] and first.json()["recomendacoes"]
+    assert any(item["caminhos"] for item in first.json()["recomendacoes"])
+    assert len(graph.json()["edges"]) == 1
+    assert graph.json()["edges"][0]["simulada"]
     assert duplicate.status_code == 409
+    assert second.json()["usuario"]["avaliacoes"] == 2
+    assert second.json()["usuario"]["filmes_positivos"] == 2
+    assert not {"f005", "f037"} & {
+        item["filme_id"] for item in second.json()["recomendacoes"]
+    }
+    assert third.json()["usuario"]["avaliacoes"] == 3
+    assert third.json()["usuario"]["filmes_positivos"] == 2
+    assert [item["similaridade"] for item in third.json()["similares"]] == [
+        item["similaridade"] for item in second.json()["similares"]
+    ]
+    assert "f060" not in {
+        item["filme_id"] for item in third.json()["recomendacoes"]
+    }
+    assert stats.json()["usuarios"] == 40 and stats.json()["avaliacoes"] == 560
+    assert all(user["nome"] != "Gabriel Oliveira" for user in users.json())
+    assert len(original_graph.json()["nodes"]) == 100
+    assert len(original_graph.json()["edges"]) == 560
     assert bad.status_code == 422
-    before_ids = {item["filme_id"] for item in after.json()["antes"]}
-    after_ids = {item["filme_id"] for item in after.json()["depois"]}
-    assert "f026" in before_ids and "f026" not in after_ids
-    assert after.json()["alteracoes"][0]["nota_nova"] == 4
     assert restored.json()["restaurado"]
+    assert not empty.json()["ativo"]
     assert {p: hashlib.sha256(p.read_bytes()).hexdigest() for p in DATA.glob("*.csv")} == originals
-    api.grafo_simulacao = before
+    api.grafo_simulacao = deepcopy(api.grafo_original)
+    api.usuario_simulado = None
+    api.alteracoes.clear()

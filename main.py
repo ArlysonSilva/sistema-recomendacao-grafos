@@ -1,3 +1,5 @@
+"""Interface de linha de comando para análises e experimentos históricos."""
+
 import argparse
 import csv
 from pathlib import Path
@@ -15,6 +17,7 @@ from src.experimentos import executar_experimentos
 
 
 def carregar(caminho=ARQUIVO_AVALIACOES, caminho_filmes=ARQUIVO_FILMES):
+    """Carrega o formato legado de CSV no ``GrafoBipartido``."""
     g = GrafoBipartido()
     caminho = Path(caminho)
     caminho_filmes = Path(caminho_filmes)
@@ -34,8 +37,9 @@ def titulo(t):
     print("\n" + "=" * 60 + f"\n{t}\n" + "=" * 60)
 
 
-def main(plot=False, salvar_saida=False, usuario_consulta=None, algoritmo="hibrido",
+def main(plot=False, usuario_consulta=None, algoritmo="hibrido",
          quantidade=5, pesos=None, diversidade=0.08, experimentos=False):
+    """Executa a apresentação textual, os experimentos ou as imagens opcionais."""
     g = carregar()
     if experimentos:
         resultados = executar_experimentos(g, EXPERIMENTOS_CSV)
